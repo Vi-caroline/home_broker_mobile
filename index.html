@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>InvistaFacil - Página Inicial</title>
+<link rel="stylesheet" href="css/estilo.css" />
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: 
+      linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)),
+      url('https://investidorsardinha.r7.com/wp-content/uploads/2020/10/bolsa-de-valores-o-que-e-como-funciona-mitos-e-custos-para-investir.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #f5e9c3;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 15px 30px;
+    background-color: #0f0f0f;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header img {
+    display: none;
+  }
+  header h1 {
+    color: #f8a619;
+    font-weight: 700;
+    font-size: 22px;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 30px;
+  }
+  main h2 {
+    font-size: 3.2rem;
+    line-height: 1.2;
+    font-weight: 900;
+    margin-bottom: 20px;
+  }
+  main h2 .highlight-orange {
+    color: #f8a619;
+  }
+  main p {
+    font-size: 1.2rem;
+    max-width: 480px;
+    margin-bottom: 40px;
+    color: #dcd6c9;
+  }
+  button.btn-entrar {
+    background-color: #f8a619;
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 30px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 180px;
+    transition: background-color 0.3s ease;
+  }
+  button.btn-entrar:hover {
+    background-color: #d67f0e;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>InvistaFacil</h1>
+</header>
+
+<main>
+  <h2>
+    Seu futuro <span class="highlight-orange">financeiro</span><br />
+    começa hoje.<br />
+    Invista de forma <span class="highlight-orange">simples e segura</span>
+  </h2>
+  <p>
+    Plataforma completa para você investir com confiança no mercado brasileiro. Acesse com facilidade, negocie ações, fundos e muito mais.
+  </p>
+  <button class="btn-entrar" onclick="window.location.href='html/login.html'">Entrar</button>
+</main>
+
+</body>
+</html>
