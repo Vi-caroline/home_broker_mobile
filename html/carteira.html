@@ -219,7 +219,7 @@
     </div>
 
     <div class="section">
-      <h2>Gráfico de Cotação PETR4</h2>
+      <h2>Gráfico de Cotação</h2>
       <canvas id="graficoCotacao" width="400" height="200"></canvas>
     </div>
 
@@ -498,116 +498,162 @@
           }
         }
       });
-
-      if (houveMudanca) {
-        atualizarTabelas();
-      }
+      if (houveMudanca) atualizarTabelas();
     }
-
-    // Atualizar cotações e ordens a cada 10 segundos
-    setInterval(() => {
-      variarCotacoes();
-      verificarOrdensPendentes();
-    }, 10000);
 
     function irParaLogin() {
-      window.location.href = "login.html"; // Ajuste para a página de login do seu projeto
+      window.location.href = "index.html";
     }
 
-    // Inicializar dados na tela
-    atualizarSaldo();
-    atualizarCarteira();
-    atualizarCotacoes();
-    atualizarTabelas();
+    // ---------------------------
 
-    // === GRÁFICO ===
+    // GRAFICO DE COTAÇÃO POR ATIVO COM SELETOR
+
     const ctx = document.getElementById('graficoCotacao').getContext('2d');
-    const cotacoesPETR4 = [];
-    const labels = [];
-    const grafico = new Chart(ctx, {
+
+    // Dados simulados para cada ativo (inicializa com o preço atual repetido)
+    const dadosGrafico = {};
+
+    for (const ativo in cotacoes) {
+      dadosGrafico[ativo] = Array(10).fill(cotacoes[ativo]); // últimos 10 valores
+    }
+
+    // Variáveis para controle do gráfico e do ativo selecionado
+    let ativoSelecionado = null;
+
+    const chartConfig = {
       type: 'line',
       data: {
-        labels: labels,
+        labels: Array(10).fill(''), // rótulos vazios para simplicidade
         datasets: [{
-          label: 'PETR4',
-          data: cotacoesPETR4,
-          borderColor: 'rgba(248, 166, 25, 1)',
-          backgroundColor: 'rgba(248, 166, 25, 0.3)',
+          label: '',
+          data: [],
+          borderColor: '#ff6600',
+          backgroundColor: 'rgba(255, 102, 0, 0.3)',
           fill: true,
           tension: 0.4,
-          pointRadius: 5,
-          pointHoverRadius: 8,
-          pointBackgroundColor: 'rgba(255, 140, 0, 1)',
+          pointRadius: 3,
+          pointHoverRadius: 6,
           borderWidth: 3,
+          spanGaps: true
         }]
       },
       options: {
         responsive: true,
-        animation: { duration: 500 },
+        animation: {
+          duration: 300
+        },
         scales: {
-          x: {
-            type: 'category',
-            ticks: {
-              maxRotation: 45,
-              color: '#f8a619',
-              font: { weight: 'bold', size: 12 },
-            },
-            grid: { color: '#333' },
-          },
           y: {
             beginAtZero: false,
             ticks: {
-              color: '#f8a619',
-              font: { weight: 'bold', size: 12 },
+              color: '#ff6600',
+              font: {
+                weight: 'bold'
+              }
             },
-            grid: { color: '#333' },
+            grid: {
+              color: '#333'
+            }
+          },
+          x: {
+            ticks: {
+              display: false // esconde labels do eixo X para simplicidade
+            },
+            grid: {
+              display: false
+            }
           }
         },
         plugins: {
           legend: {
             labels: {
-              color: '#f8a619',
-              font: { weight: 'bold', size: 16 },
-            },
+              color: '#ff6600',
+              font: {
+                size: 18,
+                weight: 'bold'
+              }
+            }
           },
           tooltip: {
-            backgroundColor: 'rgba(248, 166, 25, 0.9)',
+            enabled: true,
+            backgroundColor: '#ff6600',
             titleColor: '#000',
-            bodyColor: '#000',
-            cornerRadius: 6,
-            displayColors: false,
-            font: { weight: 'bold', size: 14 },
-          },
-        },
-        elements: {
-          line: { borderJoinStyle: 'round' }
+            bodyColor: '#000'
+          }
         }
       }
-    });
+    };
 
-    let valorAtual = cotacoes.PETR4;
+    const chart = new Chart(ctx, chartConfig);
 
+    // Função que atualiza o gráfico para o ativo selecionado
     function atualizarGrafico() {
-      const agora = new Date();
-      const horario = agora.toLocaleTimeString();
-
-      const variacao = (Math.random() - 0.5) * 0.2;
-      valorAtual = Math.max(10, valorAtual + variacao);
-      valorAtual = parseFloat(valorAtual.toFixed(2));
-
-      labels.push(horario);
-      cotacoesPETR4.push(valorAtual);
-
-      if (labels.length > 20) {
-        labels.shift();
-        cotacoesPETR4.shift();
+      if (!ativoSelecionado) {
+        chart.data.datasets[0].data = [];
+        chart.data.datasets[0].label = '';
+        chart.update();
+        return;
       }
 
-      grafico.update();
+      chart.data.datasets[0].data = dadosGrafico[ativoSelecionado];
+      chart.data.datasets[0].label = `Cotação ${ativoSelecionado}`;
+      chart.update();
     }
 
-    setInterval(atualizarGrafico, 10000);
+    // Simular variação para o ativo selecionado a cada 10s
+    function simularVariacaoGrafico() {
+      if (!ativoSelecionado) return;
+      let dados = dadosGrafico[ativoSelecionado];
+      // Variação aleatória entre -0.5 e +0.5 para deixar mais realista
+      let variacao = (Math.random() * 1 - 0.5).toFixed(2);
+      let ultimoValor = dados[dados.length -1];
+      let novoValor = Math.max(0.01, (parseFloat(ultimoValor) + parseFloat(variacao)));
+      novoValor = parseFloat(novoValor.toFixed(2));
+
+      dados.shift(); // remove o primeiro
+      dados.push(novoValor); // adiciona novo valor
+
+      cotacoes[ativoSelecionado] = novoValor; // atualiza cotação principal também
+
+      atualizarGrafico();
+      atualizarCotacoes(); // atualiza tabela do book com a cotação atual
+    }
+
+    // Ouve mudança do select para trocar o ativo do gráfico
+    document.getElementById('ativo').addEventListener('change', function() {
+      ativoSelecionado = this.value;
+      if (!ativoSelecionado) {
+        // limpar gráfico
+        chart.data.datasets[0].data = [];
+        chart.data.datasets[0].label = '';
+        chart.update();
+        return;
+      }
+      // Se dadosGrafico não tem o ativo (ex: novo), inicializa array com 10 vezes o preço atual
+      if (!dadosGrafico[ativoSelecionado]) {
+        dadosGrafico[ativoSelecionado] = Array(10).fill(cotacoes[ativoSelecionado]);
+      }
+      atualizarGrafico();
+    });
+
+    // Inicialização: ativa o gráfico para o primeiro ativo da carteira (PETR4)
+    ativoSelecionado = 'PETR4';
+    document.getElementById('ativo').value = ativoSelecionado;
     atualizarGrafico();
+
+    // Atualiza as cotações e verifica ordens pendentes a cada 10 segundos
+    setInterval(() => {
+      variarCotacoes();        // atualiza cotação no book geral (todos os ativos)
+      simularVariacaoGrafico(); // atualiza cotação no gráfico do ativo selecionado
+      verificarOrdensPendentes();
+    }, 10000);
+
+    // Inicia atualizações iniciais
+    atualizarSaldo();
+    atualizarCarteira();
+    atualizarCotacoes();
+    atualizarTabelas();
   </script>
 </body>
 </html>
