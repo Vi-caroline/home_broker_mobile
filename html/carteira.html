@@ -498,162 +498,49 @@
           }
         }
       });
-      if (houveMudanca) atualizarTabelas();
-    }
-
-    function irParaLogin() {
-      window.location.href = "index.html";
-    }
-
-    // ---------------------------
-
-    // GRAFICO DE COTAÇÃO POR ATIVO COM SELETOR
-
-    const ctx = document.getElementById('graficoCotacao').getContext('2d');
-
-    // Dados simulados para cada ativo (inicializa com o preço atual repetido)
-    const dadosGrafico = {};
-
-    for (const ativo in cotacoes) {
-      dadosGrafico[ativo] = Array(10).fill(cotacoes[ativo]); // últimos 10 valores
-    }
-
-    // Variáveis para controle do gráfico e do ativo selecionado
-    let ativoSelecionado = null;
-
-    const chartConfig = {
-      type: 'line',
-      data: {
-        labels: Array(10).fill(''), // rótulos vazios para simplicidade
-        datasets: [{
-          label: '',
-          data: [],
-          borderColor: '#ff6600',
-          backgroundColor: 'rgba(255, 102, 0, 0.3)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointHoverRadius: 6,
-          borderWidth: 3,
-          spanGaps: true
-        }]
-      },
-      options: {
-        responsive: true,
-        animation: {
-          duration: 300
-        },
-        scales: {
-          y: {
-            beginAtZero: false,
-            ticks: {
-              color: '#ff6600',
-              font: {
-                weight: 'bold'
-              }
-            },
-            grid: {
-              color: '#333'
-            }
-          },
-          x: {
-            ticks: {
-              display: false // esconde labels do eixo X para simplicidade
-            },
-            grid: {
-              display: false
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            labels: {
-              color: '#ff6600',
-              font: {
-                size: 18,
-                weight: 'bold'
-              }
-            }
-          },
-          tooltip: {
-            enabled: true,
-            backgroundColor: '#ff6600',
-            titleColor: '#000',
-            bodyColor: '#000'
-          }
-        }
+      if (houveMudanca) {
+        atualizarTabelas();
       }
-    };
-
-    const chart = new Chart(ctx, chartConfig);
-
-    // Função que atualiza o gráfico para o ativo selecionado
-    function atualizarGrafico() {
-      if (!ativoSelecionado) {
-        chart.data.datasets[0].data = [];
-        chart.data.datasets[0].label = '';
-        chart.update();
-        return;
-      }
-
-      chart.data.datasets[0].data = dadosGrafico[ativoSelecionado];
-      chart.data.datasets[0].label = `Cotação ${ativoSelecionado}`;
-      chart.update();
     }
 
-    // Simular variação para o ativo selecionado a cada 10s
-    function simularVariacaoGrafico() {
-      if (!ativoSelecionado) return;
-      let dados = dadosGrafico[ativoSelecionado];
-      // Variação aleatória entre -0.5 e +0.5 para deixar mais realista
-      let variacao = (Math.random() * 1 - 0.5).toFixed(2);
-      let ultimoValor = dados[dados.length -1];
-      let novoValor = Math.max(0.01, (parseFloat(ultimoValor) + parseFloat(variacao)));
-      novoValor = parseFloat(novoValor.toFixed(2));
-
-      dados.shift(); // remove o primeiro
-      dados.push(novoValor); // adiciona novo valor
-
-      cotacoes[ativoSelecionado] = novoValor; // atualiza cotação principal também
-
-      atualizarGrafico();
-      atualizarCotacoes(); // atualiza tabela do book com a cotação atual
-    }
-
-    // Ouve mudança do select para trocar o ativo do gráfico
-    document.getElementById('ativo').addEventListener('change', function() {
-      ativoSelecionado = this.value;
-      if (!ativoSelecionado) {
-        // limpar gráfico
-        chart.data.datasets[0].data = [];
-        chart.data.datasets[0].label = '';
-        chart.update();
-        return;
-      }
-      // Se dadosGrafico não tem o ativo (ex: novo), inicializa array com 10 vezes o preço atual
-      if (!dadosGrafico[ativoSelecionado]) {
-        dadosGrafico[ativoSelecionado] = Array(10).fill(cotacoes[ativoSelecionado]);
-      }
-      atualizarGrafico();
-    });
-
-    // Inicialização: ativa o gráfico para o primeiro ativo da carteira (PETR4)
-    ativoSelecionado = 'PETR4';
-    document.getElementById('ativo').value = ativoSelecionado;
-    atualizarGrafico();
-
-    // Atualiza as cotações e verifica ordens pendentes a cada 10 segundos
+    // Atualiza cotações a cada 10 segundos e verifica ordens pendentes
     setInterval(() => {
-      variarCotacoes();        // atualiza cotação no book geral (todos os ativos)
-      simularVariacaoGrafico(); // atualiza cotação no gráfico do ativo selecionado
+      variarCotacoes();
       verificarOrdensPendentes();
     }, 10000);
 
-    // Inicia atualizações iniciais
+    // Inicializa tela e tabelas
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
+
+    // Gráfico de cotação - exemplo simples de linha
+    const ctx = document.getElementById('graficoCotacao').getContext('2d');
+    const grafico = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: 30 }, (_, i) => i + 1),
+        datasets: [{
+          label: 'PETR4',
+          data: Array.from({ length: 30 }, () => 28 + Math.random()),
+          borderColor: 'orange',
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: false }
+        }
+      }
+    });
+
+    function irParaLogin() {
+      // Ajuste aqui para a pasta correta da sua tela de login
+      window.location.href = "login.html"; // se carteira.html e login.html estiverem na mesma pasta html
+      // Se o login.html estiver em outra pasta, ajuste o caminho aqui
+    }
   </script>
 </body>
 </html>
