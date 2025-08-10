@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Carteira - Home Broker</title>
+  <title>Carteira - InvistaFacil</title>
   <style>
     body {
       margin: 0;
@@ -52,6 +52,10 @@
       font-size: 16px;
     }
 
+    .header button:hover {
+      background-color: #e65c00;
+    }
+
     .section {
       background: #1e1e1e;
       padding: 20px;
@@ -73,7 +77,7 @@
       border-collapse: collapse;
       margin-top: 10px;
       color: white;
-      table-layout: fixed; /* para largura fixa */
+      table-layout: fixed;
       word-wrap: break-word;
     }
 
@@ -131,7 +135,7 @@
       color: white;
       padding: 5px 10px;
       border-radius: 5px;
-      box-shadow: #ff6600;
+      box-shadow: 0 0 10px #ff6600;
       max-width: 420px;
       width: 90%;
       position: relative;
@@ -143,7 +147,7 @@
       color: #ff6600;
     }
 
-    .close-button {
+    .close-button, .fechar {
       position: absolute;
       top: 10px;
       right: 15px;
@@ -166,12 +170,22 @@
       overflow-x: auto;
     }
 
+    /* Estilo para o canvas do gráfico */
+    #graficoCotacao {
+      max-width: 100%;
+      height: auto;
+      box-shadow: 0 4px 15px rgba(248, 166, 25, 0.7);
+      margin-top: 15px;
+      border-radius: 12px;
+      display: block;
+      background-color: #121212;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1 id="headerSaldo">Bem-vindo a ContaInvistaFacil| Saldo: R$ 100.000,00</h1> <!-- ID adicionado para atualizar o saldo -->
+      <h1 id="headerSaldo">Bem-vindo a ContaInvistaFacil | Saldo: R$ 100.000,00</h1>
       <button onclick="irParaLogin()">Fechar</button>
     </div>
 
@@ -179,7 +193,7 @@
       <h2>Carteira</h2>
       <table>
         <thead><tr><th>Ativo</th><th>Quantidade</th></tr></thead>
-        <tbody id="carteiraBody"> <!-- ID adicionado para atualizar a carteira -->
+        <tbody id="carteiraBody">
           <tr><td>PETR4</td><td>300</td></tr>
           <tr><td>VALE3</td><td>200</td></tr>
           <tr><td>ITUB4</td><td>100</td></tr>
@@ -191,7 +205,7 @@
       <h2>Book de Ofertas (B3)</h2>
       <table>
         <thead><tr><th>Ativo</th><th>Preço Atual (R$)</th></tr></thead>
-        <tbody id="bookCotacoesBody"> <!-- ID adicionado para atualizar cotações -->
+        <tbody id="bookCotacoesBody">
           <tr><td>PETR4</td><td>28,95</td></tr>
           <tr><td>VALE3</td><td>72,75</td></tr>
           <tr><td>ITUB4</td><td>31,55</td></tr>
@@ -205,53 +219,34 @@
     </div>
 
     <div class="section">
-  <h2>Boleta de Compra e Venda</h2>
-  <div class="boleta-form">
-    <select id="tipoOrdem">
-      <option value="Compra">Compra</option>
-      <option value="Venda">Venda</option>
-    </select>
-    <select id="ativo">
-      <option value="">Selecione o ativo</option>
-      <option value="PETR4">PETR4</option>
-      <option value="VALE3">VALE3</option>
-      <option value="ITUB4">ITUB4</option>
-      <option value="BBDC4">BBDC4</option>
-      <option value="ABEV3">ABEV3</option>
-      <option value="MGLU3">MGLU3</option>
-      <option value="BBAS3">BBAS3</option>
-      <option value="LREN3">LREN3</option>
-    </select>
-
-    <input type="number" id="quantidade" placeholder="Qtd (múltiplos de 100)" min="100" step="100" />
-    <input type="number" id="valor" placeholder="Valor por lote (R$)" step="0.01" />
-    <button onclick="enviarOrdem()">Enviar Ordem</button>
-  </div>
-</div>
-
-<!-- Modal -->
-  <div id="modalConfirmacao" class="modal">
-    <div class="modal-content">
-      <p id="mensagemConfirmacao"></p>
-      <button onclick="confirmarOrdem()">Confirmar</button>
-      <button onclick="fecharModal()">Fechar</button>
+      <h2>Gráfico de Cotação PETR4</h2>
+      <canvas id="graficoCotacao" width="400" height="200"></canvas>
     </div>
-  </div>
 
+    <div class="section">
+      <h2>Boleta de Compra e Venda</h2>
+      <div class="boleta-form">
+        <select id="tipoOrdem">
+          <option value="Compra">Compra</option>
+          <option value="Venda">Venda</option>
+        </select>
+        <select id="ativo">
+          <option value="">Selecione o ativo</option>
+          <option value="PETR4">PETR4</option>
+          <option value="VALE3">VALE3</option>
+          <option value="ITUB4">ITUB4</option>
+          <option value="BBDC4">BBDC4</option>
+          <option value="ABEV3">ABEV3</option>
+          <option value="MGLU3">MGLU3</option>
+          <option value="BBAS3">BBAS3</option>
+          <option value="LREN3">LREN3</option>
+        </select>
 
-
- <script>
-    <!-- Modal de Confirmação -->
-  <div id="modalConfirmacao" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="fecharModal()">&times;</span>
-      <p id="mensagemConfirmacao"></p>
-      <button onclick="enviarOrdem()">Confirmar</button>
+        <input type="number" id="quantidade" placeholder="Qtd (múltiplos de 100)" min="100" step="100" />
+        <input type="number" id="valor" placeholder="Valor por lote (R$)" step="0.01" />
+        <button onclick="enviarOrdem()">Enviar Ordem</button>
+      </div>
     </div>
-  </div>
-
-  <script src="../js/script.js"></script>
-
 
     <div class="section">
       <h2>Extrato de Operações</h2>
@@ -284,232 +279,335 @@
     </div>
   </div>
 
-<script>
-  let saldo = 100000;
+  <!-- Modal de Confirmação -->
+  <div id="modalConfirmacao" class="modal">
+    <div class="modal-content">
+      <span class="close-button" onclick="fecharModal()">&times;</span>
+      <p id="mensagemConfirmacao"></p>
+      <button onclick="confirmarOrdem()">Confirmar</button>
+      <button onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
 
-  let carteira = {
-    PETR4: 300,
-    VALE3: 200,
-    ITUB4: 100
-  };
+  <!-- Importa Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  let cotacoes = {
-    PETR4: 28.95,
-    VALE3: 72.75,
-    ITUB4: 31.55,
-    BBDC4: 28.25,
-    ABEV3: 14.70,
-    MGLU3: 3.90,
-    BBAS3: 49.55,
-    LREN3: 18.75,
-  };
+  <script>
+    let saldo = 100000;
 
-  const extrato = [];
-  const bookOrdens = [];
-  let ordemPendente = null; // <-- usada para confirmação
-
-  function atualizarSaldo() {
-    document.getElementById("headerSaldo").textContent = `Bem-vindo Conta A | Saldo: R$ ${saldo.toFixed(2)}`;
-  }
-
-  function atualizarCarteira() {
-    const carteiraBody = document.getElementById("carteiraBody");
-    carteiraBody.innerHTML = "";
-    for (const ativo in carteira) {
-      carteiraBody.innerHTML += `<tr><td>${ativo}</td><td>${carteira[ativo]}</td></tr>`;
-    }
-  }
-
-  function atualizarCotacoes() {
-    const bookCotacoesBody = document.getElementById("bookCotacoesBody");
-    bookCotacoesBody.innerHTML = "";
-    for (const ativo in cotacoes) {
-      bookCotacoesBody.innerHTML += `<tr><td>${ativo}</td><td>R$ ${cotacoes[ativo].toFixed(2)}</td></tr>`;
-    }
-  }
-
-  function variarCotacoes() {
-    for (const ativo in cotacoes) {
-      const variacao = Math.random() < 0.5 ? -0.01 : 0.01;
-      cotacoes[ativo] = Math.max(0.01, cotacoes[ativo] + variacao);
-      cotacoes[ativo] = parseFloat(cotacoes[ativo].toFixed(2));
-    }
-    atualizarCotacoes();
-  }
-
-  function mostrarModal(mensagem) {
-    document.getElementById("modalTexto").textContent = mensagem;
-    document.getElementById("meuModal").style.display = "flex";
-  }
-
-  function fecharModal() {
-    document.getElementById("meuModal").style.display = "none";
-    document.getElementById("modalConfirmacao").style.display = "none";
-  }
-
-  function atualizarTabelas() {
-    const extratoBody = document.getElementById("extratoBody");
-    const bookOrdensBody = document.getElementById("bookOrdensBody");
-    extratoBody.innerHTML = "";
-    bookOrdensBody.innerHTML = "";
-
-    extrato.forEach(e => {
-      extratoBody.innerHTML += `<tr><td>${e.tipo}</td><td>${e.ativo}</td><td>${e.quantidade}</td><td>R$ ${e.total.toFixed(2)}</td></tr>`;
-    });
-
-    bookOrdens.forEach((o, i) => {
-      const botaoCancelar = o.status === "Aceita" ? `<button onclick="cancelarOrdem(${i})">Cancelar</button>` : "";
-      bookOrdensBody.innerHTML += `
-        <tr>
-          <td>${o.tipo}</td><td>${o.ativo}</td><td>${o.quantidade}</td>
-          <td>R$ ${o.valor.toFixed(2)}</td><td>R$ ${o.cotacao.toFixed(2)}</td><td>${o.status}</td>
-          <td>${botaoCancelar}</td>
-        </tr>`;
-    });
-
-    atualizarSaldo();
-    atualizarCarteira();
-  }
-
-  function cancelarOrdem(index) {
-    if (bookOrdens[index].status === "Aceita") {
-      bookOrdens.splice(index, 1);
-      atualizarTabelas();
-      mostrarModal("Ordem cancelada!");
-    }
-  }
-
-  function enviarOrdem() {
-    const tipo = document.getElementById("tipoOrdem").value;
-    const ativo = document.getElementById("ativo").value;
-    const quantidade = parseInt(document.getElementById("quantidade").value);
-    const valor = parseFloat(document.getElementById("valor").value);
-
-    if (!ativo || isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0 || isNaN(valor) || valor <= 0) {
-      mostrarModal("Preencha quantidade válida (múltiplos de 100) e valor.");
-      return;
-    }
-
-    const cotacaoAtual = cotacoes[ativo];
-    const total = valor * quantidade;
-
-    // Salva para confirmar depois
-    ordemPendente = {
-      tipo,
-      ativo,
-      quantidade,
-      valor,
-      cotacao: cotacaoAtual,
-      total
+    let carteira = {
+      PETR4: 300,
+      VALE3: 200,
+      ITUB4: 100
     };
 
-    // Mostra mensagem personalizada
-    const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
-    document.getElementById("mensagemConfirmacao").textContent = mensagem;
-    document.getElementById("modalConfirmacao").style.display = "flex";
-  }
+    let cotacoes = {
+      PETR4: 28.95,
+      VALE3: 72.75,
+      ITUB4: 31.55,
+      BBDC4: 28.25,
+      ABEV3: 14.70,
+      MGLU3: 3.90,
+      BBAS3: 49.55,
+      LREN3: 18.75,
+    };
 
-  function confirmarOrdem() {
-    if (!ordemPendente) return;
+    const extrato = [];
+    const bookOrdens = [];
+    let ordemPendente = null;
 
-    const { tipo, ativo, quantidade, valor, cotacao, total } = ordemPendente;
-    const diff = Math.abs(valor - cotacao);
-    let status = "";
+    function atualizarSaldo() {
+      document.getElementById("headerSaldo").textContent = `Bem-vindo a ContaInvistaFacil | Saldo: R$ ${saldo.toFixed(2)}`;
+    }
 
-    if (tipo === "Compra") {
-      if (saldo < total) {
-        mostrarModal("Saldo insuficiente para essa compra.");
-        return;
-      }
-      if (diff === 0) {
-        status = "Executada";
-        carteira[ativo] = (carteira[ativo] || 0) + quantidade;
-        saldo -= total;
-        extrato.push({ tipo, ativo, quantidade, total });
-      } else if (diff <= 5) {
-        status = "Aceita";
-      } else {
-        mostrarModal("Ordem de compra rejeitada: diferença maior que R$5.");
-        return;
-      }
-    } else if (tipo === "Venda") {
-      if (!carteira[ativo] || carteira[ativo] < quantidade) {
-        mostrarModal("Você não possui ações suficientes para vender.");
-        return;
-      }
-      if (diff === 0) {
-        status = "Executada";
-        carteira[ativo] -= quantidade;
-        saldo += total;
-        extrato.push({ tipo, ativo, quantidade, total });
-      } else if (diff <= 5) {
-        status = "Aceita";
-      } else {
-        mostrarModal("Ordem de venda rejeitada: diferença maior que R$5.");
-        return;
+    function atualizarCarteira() {
+      const carteiraBody = document.getElementById("carteiraBody");
+      carteiraBody.innerHTML = "";
+      for (const ativo in carteira) {
+        carteiraBody.innerHTML += `<tr><td>${ativo}</td><td>${carteira[ativo]}</td></tr>`;
       }
     }
 
-    bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, status });
+    function atualizarCotacoes() {
+      const bookCotacoesBody = document.getElementById("bookCotacoesBody");
+      bookCotacoesBody.innerHTML = "";
+      for (const ativo in cotacoes) {
+        bookCotacoesBody.innerHTML += `<tr><td>${ativo}</td><td>R$ ${cotacoes[ativo].toFixed(2)}</td></tr>`;
+      }
+    }
+
+    function variarCotacoes() {
+      for (const ativo in cotacoes) {
+        const variacao = Math.random() < 0.5 ? -0.01 : 0.01;
+        cotacoes[ativo] = Math.max(0.01, cotacoes[ativo] + variacao);
+        cotacoes[ativo] = parseFloat(cotacoes[ativo].toFixed(2));
+      }
+      atualizarCotacoes();
+    }
+
+    function mostrarModal(mensagem) {
+      document.getElementById("modalTexto").textContent = mensagem;
+      document.getElementById("meuModal").style.display = "flex";
+    }
+
+    function fecharModal() {
+      document.getElementById("meuModal").style.display = "none";
+      document.getElementById("modalConfirmacao").style.display = "none";
+    }
+
+    function atualizarTabelas() {
+      const extratoBody = document.getElementById("extratoBody");
+      const bookOrdensBody = document.getElementById("bookOrdensBody");
+      extratoBody.innerHTML = "";
+      bookOrdensBody.innerHTML = "";
+
+      extrato.forEach(e => {
+        extratoBody.innerHTML += `<tr><td>${e.tipo}</td><td>${e.ativo}</td><td>${e.quantidade}</td><td>R$ ${e.total.toFixed(2)}</td></tr>`;
+      });
+
+      bookOrdens.forEach((o, i) => {
+        const botaoCancelar = o.status === "Aceita" ? `<button onclick="cancelarOrdem(${i})">Cancelar</button>` : "";
+        bookOrdensBody.innerHTML += `
+          <tr>
+            <td>${o.tipo}</td><td>${o.ativo}</td><td>${o.quantidade}</td>
+            <td>R$ ${o.valor.toFixed(2)}</td><td>R$ ${o.cotacao.toFixed(2)}</td><td>${o.status}</td>
+            <td>${botaoCancelar}</td>
+          </tr>`;
+      });
+
+      atualizarSaldo();
+      atualizarCarteira();
+    }
+
+    function cancelarOrdem(index) {
+      if (bookOrdens[index].status === "Aceita") {
+        bookOrdens.splice(index, 1);
+        atualizarTabelas();
+        mostrarModal("Ordem cancelada!");
+      }
+    }
+
+    function enviarOrdem() {
+      const tipo = document.getElementById("tipoOrdem").value;
+      const ativo = document.getElementById("ativo").value;
+      const quantidade = parseInt(document.getElementById("quantidade").value);
+      const valor = parseFloat(document.getElementById("valor").value);
+
+      if (!ativo || isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0 || isNaN(valor) || valor <= 0) {
+        mostrarModal("Preencha quantidade válida (múltiplos de 100) e valor.");
+        return;
+      }
+
+      const cotacaoAtual = cotacoes[ativo];
+      const total = valor * quantidade;
+
+      ordemPendente = {
+        tipo,
+        ativo,
+        quantidade,
+        valor,
+        cotacao: cotacaoAtual,
+        total
+      };
+
+      const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
+      document.getElementById("mensagemConfirmacao").textContent = mensagem;
+      document.getElementById("modalConfirmacao").style.display = "flex";
+    }
+
+    function confirmarOrdem() {
+      if (!ordemPendente) return;
+
+      const { tipo, ativo, quantidade, valor, cotacao, total } = ordemPendente;
+      const diff = Math.abs(valor - cotacao);
+      let status = "";
+
+      if (tipo === "Compra") {
+        if (saldo < total) {
+          mostrarModal("Saldo insuficiente para essa compra.");
+          return;
+        }
+        if (diff === 0) {
+          status = "Executada";
+          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
+          saldo -= total;
+          extrato.push({ tipo, ativo, quantidade, total });
+        } else if (diff <= 5) {
+          status = "Aceita";
+        } else {
+          mostrarModal("Ordem de compra rejeitada: diferença maior que R$5.");
+          return;
+        }
+      } else if (tipo === "Venda") {
+        if (!carteira[ativo] || carteira[ativo] < quantidade) {
+          mostrarModal("Você não possui ações suficientes para vender.");
+          return;
+        }
+        if (diff === 0) {
+          status = "Executada";
+          carteira[ativo] -= quantidade;
+          saldo += total;
+          extrato.push({ tipo, ativo, quantidade, total });
+        } else if (diff <= 5) {
+          status = "Aceita";
+        } else {
+          mostrarModal("Ordem de venda rejeitada: diferença maior que R$5.");
+          return;
+        }
+      }
+
+      bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, status });
+      atualizarTabelas();
+
+      if (status === "Executada") {
+        mostrarModal("Ordem executada com sucesso!");
+      } else {
+        mostrarModal("Ordem aceita e pendente de execução.");
+      }
+
+      ordemPendente = null;
+      fecharModal();
+
+      document.getElementById("quantidade").value = "";
+      document.getElementById("valor").value = "";
+      document.getElementById("ativo").value = "";
+      document.getElementById("tipoOrdem").value = "Compra";
+    }
+
+    function verificarOrdensPendentes() {
+      let houveMudanca = false;
+      bookOrdens.forEach(ordem => {
+        if (ordem.status === "Aceita") {
+          const precoAtual = cotacoes[ordem.ativo];
+          if (precoAtual === ordem.valor) {
+            ordem.status = "Executada";
+            if (ordem.tipo === "Compra") {
+              carteira[ordem.ativo] = (carteira[ordem.ativo] || 0) + ordem.quantidade;
+              saldo -= ordem.valor * ordem.quantidade;
+            } else {
+              carteira[ordem.ativo] -= ordem.quantidade;
+              saldo += ordem.valor * ordem.quantidade;
+            }
+            extrato.push({
+              tipo: ordem.tipo,
+              ativo: ordem.ativo,
+              quantidade: ordem.quantidade,
+              total: ordem.valor * ordem.quantidade
+            });
+            houveMudanca = true;
+          }
+        }
+      });
+
+      if (houveMudanca) {
+        atualizarTabelas();
+      }
+    }
+
+    // Atualizar cotações e ordens a cada 10 segundos
+    setInterval(() => {
+      variarCotacoes();
+      verificarOrdensPendentes();
+    }, 10000);
+
+    function irParaLogin() {
+      window.location.href = "login.html"; // Ajuste para a página de login do seu projeto
+    }
+
+    // Inicializar dados na tela
+    atualizarSaldo();
+    atualizarCarteira();
+    atualizarCotacoes();
     atualizarTabelas();
 
-    if (status === "Executada") {
-      mostrarModal("Ordem executada com sucesso!");
-    } else {
-      mostrarModal("Ordem aceita e pendente de execução.");
-    }
-
-    // Limpa
-    ordemPendente = null;
-    fecharModal();
-
-    document.getElementById("quantidade").value = "";
-    document.getElementById("valor").value = "";
-    document.getElementById("ativo").value = "";
-    document.getElementById("tipoOrdem").value = "Compra";
-  }
-
-  function verificarOrdensPendentes() {
-    let houveMudanca = false;
-    bookOrdens.forEach(ordem => {
-      if (ordem.status === "Aceita") {
-        const precoAtual = cotacoes[ordem.ativo];
-        if (precoAtual === ordem.valor) {
-          ordem.status = "Executada";
-          if (ordem.tipo === "Compra") {
-            carteira[ordem.ativo] = (carteira[ordem.ativo] || 0) + ordem.quantidade;
-            saldo -= ordem.valor * ordem.quantidade;
-          } else {
-            carteira[ordem.ativo] -= ordem.quantidade;
-            saldo += ordem.valor * ordem.quantidade;
+    // === GRÁFICO ===
+    const ctx = document.getElementById('graficoCotacao').getContext('2d');
+    const cotacoesPETR4 = [];
+    const labels = [];
+    const grafico = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'PETR4',
+          data: cotacoesPETR4,
+          borderColor: 'rgba(248, 166, 25, 1)',
+          backgroundColor: 'rgba(248, 166, 25, 0.3)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: 'rgba(255, 140, 0, 1)',
+          borderWidth: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 500 },
+        scales: {
+          x: {
+            type: 'category',
+            ticks: {
+              maxRotation: 45,
+              color: '#f8a619',
+              font: { weight: 'bold', size: 12 },
+            },
+            grid: { color: '#333' },
+          },
+          y: {
+            beginAtZero: false,
+            ticks: {
+              color: '#f8a619',
+              font: { weight: 'bold', size: 12 },
+            },
+            grid: { color: '#333' },
           }
-          extrato.push({
-            tipo: ordem.tipo,
-            ativo: ordem.ativo,
-            quantidade: ordem.quantidade,
-            total: ordem.valor * ordem.quantidade
-          });
-          houveMudanca = true;
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#f8a619',
+              font: { weight: 'bold', size: 16 },
+            },
+          },
+          tooltip: {
+            backgroundColor: 'rgba(248, 166, 25, 0.9)',
+            titleColor: '#000',
+            bodyColor: '#000',
+            cornerRadius: 6,
+            displayColors: false,
+            font: { weight: 'bold', size: 14 },
+          },
+        },
+        elements: {
+          line: { borderJoinStyle: 'round' }
         }
       }
     });
-    if (houveMudanca) atualizarTabelas();
-  }
 
-  setInterval(() => {
-    variarCotacoes();
-    verificarOrdensPendentes();
-  }, 10000);
+    let valorAtual = cotacoes.PETR4;
 
-  atualizarSaldo();
-  atualizarCarteira();
-  atualizarCotacoes();
-  atualizarTabelas();
+    function atualizarGrafico() {
+      const agora = new Date();
+      const horario = agora.toLocaleTimeString();
 
-  function irParaLogin() {
-    window.location.href = "login.html";
-  }
-</script>
+      const variacao = (Math.random() - 0.5) * 0.2;
+      valorAtual = Math.max(10, valorAtual + variacao);
+      valorAtual = parseFloat(valorAtual.toFixed(2));
 
+      labels.push(horario);
+      cotacoesPETR4.push(valorAtual);
+
+      if (labels.length > 20) {
+        labels.shift();
+        cotacoesPETR4.shift();
+      }
+
+      grafico.update();
+    }
+
+    setInterval(atualizarGrafico, 10000);
+    atualizarGrafico();
+  </script>
 </body>
 </html>
