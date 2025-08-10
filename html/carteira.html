@@ -500,22 +500,30 @@
       });
       if (houveMudanca) {
         atualizarTabelas();
+        mostrarModal("Ordens pendentes executadas automaticamente!");
       }
     }
 
-    // Atualiza cotações a cada 10 segundos e verifica ordens pendentes
+    // Atualizar cotações e verificar ordens a cada 10s
     setInterval(() => {
       variarCotacoes();
       verificarOrdensPendentes();
+      atualizarGrafico(document.getElementById("ativo").value || 'PETR4');
     }, 10000);
 
-    // Inicializa tela e tabelas
+    // Inicializações
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
 
-    // Gráfico de cotação - exemplo simples de linha
+    // Botão fechar - volta para tela de login
+    function irParaLogin() {
+      window.location.href = "./login.html"; // ajuste o caminho se necessário
+    }
+
+    // --------- GRÁFICO ----------
+
     const ctx = document.getElementById('graficoCotacao').getContext('2d');
     const grafico = new Chart(ctx, {
       type: 'line',
@@ -523,7 +531,7 @@
         labels: Array.from({ length: 30 }, (_, i) => i + 1),
         datasets: [{
           label: 'PETR4',
-          data: Array.from({ length: 30 }, () => 28 + Math.random()),
+          data: [],
           borderColor: 'orange',
           fill: false,
           tension: 0.3
@@ -532,15 +540,35 @@
       options: {
         scales: {
           y: { beginAtZero: false }
+        },
+        plugins: {
+          legend: { labels: { color: 'orange' } }
         }
       }
     });
 
-    function irParaLogin() {
-      // Ajuste aqui para a pasta correta da sua tela de login
-      window.location.href = "login.html"; // se carteira.html e login.html estiverem na mesma pasta html
-      // Se o login.html estiver em outra pasta, ajuste o caminho aqui
+    function gerarDadosAleatorios(base) {
+      return Array.from({ length: 30 }, () => {
+        const variacao = (Math.random() - 0.5) * 2; // varia entre -1 e +1
+        let valor = base + variacao;
+        if (valor < 0) valor = base; 
+        return parseFloat(valor.toFixed(2));
+      });
     }
+
+    function atualizarGrafico(ativo) {
+      if (!ativo || !cotacoes[ativo]) return;
+      grafico.data.datasets[0].label = ativo;
+      grafico.data.datasets[0].data = gerarDadosAleatorios(cotacoes[ativo]);
+      grafico.update();
+    }
+
+    document.getElementById("ativo").addEventListener("change", function () {
+      atualizarGrafico(this.value);
+    });
+
+    // Inicializa o gráfico com PETR4
+    atualizarGrafico('PETR4');
   </script>
 </body>
 </html>
