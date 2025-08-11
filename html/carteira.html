@@ -267,6 +267,7 @@
         </thead>
         <tbody id="bookOrdensBody"></tbody>
       </table>
+      <button onclick="exportarRelatorioExcel()">Exportar Relatório Excel</button>
     </div>
   </div>
 
@@ -291,6 +292,8 @@
 
   <!-- Importa Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Importa SheetJS para exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <script>
     let saldo = 100000;
@@ -500,75 +503,94 @@
       });
       if (houveMudanca) {
         atualizarTabelas();
-        mostrarModal("Ordens pendentes executadas automaticamente!");
       }
     }
 
-    // Atualizar cotações e verificar ordens a cada 10s
+    // Função para exportar Excel
+    function exportarRelatorioExcel() {
+      const wb = XLSX.utils.book_new();
+
+      // Extrato
+      const dadosExtrato = extrato.map(e => ({
+        Tipo: e.tipo,
+        Ativo: e.ativo,
+        Quantidade: e.quantidade,
+        "Valor Total": e.total.toFixed(2)
+      }));
+      const wsExtrato = XLSX.utils.json_to_sheet(dadosExtrato);
+      XLSX.utils.book_append_sheet(wb, wsExtrato, "Extrato");
+
+      // Ordens
+      const dadosOrdens = bookOrdens.map(o => ({
+        Tipo: o.tipo,
+        Ativo: o.ativo,
+        Quantidade: o.quantidade,
+        Valor: o.valor.toFixed(2),
+        Cotação: o.cotacao.toFixed(2),
+        Status: o.status
+      }));
+      const wsOrdens = XLSX.utils.json_to_sheet(dadosOrdens);
+      XLSX.utils.book_append_sheet(wb, wsOrdens, "Ordens");
+
+      XLSX.writeFile(wb, "relatorio_operacoes.xlsx");
+    }
+
+    // Função para ir para a tela login
+    function irParaLogin() {
+      window.location.href = "login.html";
+    }
+
+    // Gráfico com Chart.js
+    const ctx = document.getElementById('graficoCotacao').getContext('2d');
+    const labels = Object.keys(cotacoes);
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Cotação Atual (R$)',
+          data: Object.values(cotacoes),
+          backgroundColor: 'rgba(255, 102, 0, 0.7)',
+          borderColor: 'rgba(255, 102, 0, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'white' },
+            grid: { color: '#333' }
+          },
+          x: {
+            ticks: { color: 'white' },
+            grid: { color: '#333' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: 'white' } }
+        }
+      }
+    });
+
+    // Atualização periódica: variar cotacoes, atualizar gráfico, verificar ordens
     setInterval(() => {
       variarCotacoes();
       verificarOrdensPendentes();
-      atualizarGrafico(document.getElementById("ativo").value || 'PETR4');
+      atualizarTabelas();
+
+      chart.data.datasets[0].data = Object.values(cotacoes);
+      chart.update();
     }, 10000);
 
-    // Inicializações
+    // Atualiza tudo inicialmente
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
 
-    // Botão fechar - volta para tela de login
-    function irParaLogin() {
-      window.location.href = "./login.html"; // ajuste o caminho se necessário
-    }
-
-    // --------- GRÁFICO ----------
-
-    const ctx = document.getElementById('graficoCotacao').getContext('2d');
-    const grafico = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array.from({ length: 30 }, (_, i) => i + 1),
-        datasets: [{
-          label: 'PETR4',
-          data: [],
-          borderColor: 'orange',
-          fill: false,
-          tension: 0.3
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: false }
-        },
-        plugins: {
-          legend: { labels: { color: 'orange' } }
-        }
-      }
-    });
-
-    function gerarDadosAleatorios(base) {
-      return Array.from({ length: 30 }, () => {
-        const variacao = (Math.random() - 0.5) * 2; // varia entre -1 e +1
-        let valor = base + variacao;
-        if (valor < 0) valor = base; 
-        return parseFloat(valor.toFixed(2));
-      });
-    }
-
-    function atualizarGrafico(ativo) {
-      if (!ativo || !cotacoes[ativo]) return;
-      grafico.data.datasets[0].label = ativo;
-      grafico.data.datasets[0].data = gerarDadosAleatorios(cotacoes[ativo]);
-      grafico.update();
-    }
-
-    document.getElementById("ativo").addEventListener("change", function () {
-      atualizarGrafico(this.value);
-    });
-
-    // Inicializa o gráfico com PETR4
-    atualizarGrafico('PETR4');
   </script>
 </body>
 </html>
