@@ -13,6 +13,35 @@
       color: white;
     }
 
+    /* MENU fixo no topo */
+    #menuExportacao {
+      background-color: #121212;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 12px 0;
+      box-shadow: 0 2px 8px rgba(255, 102, 0, 0.7);
+      position: sticky;
+      top: 0;
+      z-index: 10000;
+    }
+
+    #menuExportacao button {
+      background-color: #ff6600;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 10px 24px;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+
+    #menuExportacao button:hover {
+      background-color: #e65c00;
+    }
+
     .container {
       max-width: 1200px;
       margin: 30px auto;
@@ -183,6 +212,13 @@
   </style>
 </head>
 <body>
+
+  <!-- MENU DE EXPORTAÇÃO -->
+  <div id="menuExportacao">
+    <button onclick="exportarRelatorioExcel()">Exportar Excel</button>
+    <button onclick="exportarOrdensJSON()">Exportar JSON</button>
+  </div>
+
   <div class="container">
     <div class="header">
       <h1 id="headerSaldo">Bem-vindo a ContaInvistaFacil | Saldo: R$ 100.000,00</h1>
@@ -267,7 +303,6 @@
         </thead>
         <tbody id="bookOrdensBody"></tbody>
       </table>
-      <button onclick="exportarRelatorioExcel()">Exportar Relatório Excel</button>
     </div>
   </div>
 
@@ -464,50 +499,93 @@
 
       if (status === "Executada") {
         mostrarModal("Ordem executada com sucesso!");
-      } else {
-        mostrarModal("Ordem aceita e pendente de execução.");
+      } else if (status === "Aceita") {
+        mostrarModal("Ordem aceita e pendente.");
       }
 
       ordemPendente = null;
       fecharModal();
-
-      document.getElementById("quantidade").value = "";
-      document.getElementById("valor").value = "";
-      document.getElementById("ativo").value = "";
-      document.getElementById("tipoOrdem").value = "Compra";
     }
 
-    function verificarOrdensPendentes() {
-      let houveMudanca = false;
-      bookOrdens.forEach(ordem => {
-        if (ordem.status === "Aceita") {
-          const precoAtual = cotacoes[ordem.ativo];
-          if (precoAtual === ordem.valor) {
-            ordem.status = "Executada";
-            if (ordem.tipo === "Compra") {
-              carteira[ordem.ativo] = (carteira[ordem.ativo] || 0) + ordem.quantidade;
-              saldo -= ordem.valor * ordem.quantidade;
-            } else {
-              carteira[ordem.ativo] -= ordem.quantidade;
-              saldo += ordem.valor * ordem.quantidade;
+    function atualizarGrafico() {
+      const ctx = document.getElementById('graficoCotacao').getContext('2d');
+      const labels = Object.keys(cotacoes);
+      const data = Object.values(cotacoes);
+
+      if (window.grafico) {
+        window.grafico.data.labels = labels;
+        window.grafico.data.datasets[0].data = data;
+        window.grafico.update();
+      } else {
+        window.grafico = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Cotação (R$)',
+              data,
+              backgroundColor: 'rgba(255, 102, 0, 0.7)',
+              borderColor: 'rgba(255, 102, 0, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
             }
-            extrato.push({
-              tipo: ordem.tipo,
-              ativo: ordem.ativo,
-              quantidade: ordem.quantidade,
-              total: ordem.valor * ordem.quantidade
-            });
-            houveMudanca = true;
           }
-        }
-      });
-      if (houveMudanca) {
-        atualizarTabelas();
+        });
       }
     }
 
-    // Função para exportar Excel
+    function irParaLogin() {
+      window.location.href = "index.html";
+    }
+
+    // Atualização automática a cada 10s
+    setInterval(() => {
+      variarCotacoes();
+      atualizarGrafico();
+      verificarOrdensPendentes();
+      atualizarTabelas();
+    }, 10000);
+
+    // Verifica ordens pendentes e executa se possível
+    function verificarOrdensPendentes() {
+      bookOrdens.forEach(o => {
+        if (o.status === "Aceita") {
+          const diff = Math.abs(o.valor - cotacoes[o.ativo]);
+          if (diff === 0) {
+            o.status = "Executada";
+            if (o.tipo === "Compra") {
+              carteira[o.ativo] = (carteira[o.ativo] || 0) + o.quantidade;
+              saldo -= o.valor * o.quantidade;
+            } else if (o.tipo === "Venda") {
+              carteira[o.ativo] -= o.quantidade;
+              saldo += o.valor * o.quantidade;
+            }
+            extrato.push({
+              tipo: o.tipo,
+              ativo: o.ativo,
+              quantidade: o.quantidade,
+              total: o.valor * o.quantidade
+            });
+            mostrarModal(`Ordem pendente de ${o.tipo.toLowerCase()} para ${o.ativo} executada!`);
+          }
+        }
+      });
+      atualizarTabelas();
+    }
+
+    // Função para exportar Excel usando SheetJS
     function exportarRelatorioExcel() {
+      if (typeof XLSX === "undefined") {
+        alert("Biblioteca XLSX não carregada!");
+        return;
+      }
+
       const wb = XLSX.utils.book_new();
 
       // Extrato
@@ -534,62 +612,37 @@
 
       XLSX.writeFile(wb, "relatorio_operacoes.xlsx");
     }
-
-    // Função para ir para a tela login
+// Função para ir para a tela login
     function irParaLogin() {
       window.location.href = "login.html";
+   }
+    // Função para exportar ordens para JSON
+    function exportarOrdensJSON() {
+      if (bookOrdens.length === 0) {
+        alert("Não há ordens para exportar.");
+        return;
+      }
+
+      const jsonStr = JSON.stringify(bookOrdens, null, 2);
+
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ordens.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
-    // Gráfico com Chart.js
-    const ctx = document.getElementById('graficoCotacao').getContext('2d');
-    const labels = Object.keys(cotacoes);
-
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Cotação Atual (R$)',
-          data: Object.values(cotacoes),
-          backgroundColor: 'rgba(255, 102, 0, 0.7)',
-          borderColor: 'rgba(255, 102, 0, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: 'white' },
-            grid: { color: '#333' }
-          },
-          x: {
-            ticks: { color: 'white' },
-            grid: { color: '#333' }
-          }
-        },
-        plugins: {
-          legend: { labels: { color: 'white' } }
-        }
-      }
-    });
-
-    // Atualização periódica: variar cotacoes, atualizar gráfico, verificar ordens
-    setInterval(() => {
-      variarCotacoes();
-      verificarOrdensPendentes();
-      atualizarTabelas();
-
-      chart.data.datasets[0].data = Object.values(cotacoes);
-      chart.update();
-    }, 10000);
-
-    // Atualiza tudo inicialmente
+    // Inicializações
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
+    atualizarGrafico();
 
   </script>
 </body>
