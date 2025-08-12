@@ -36,6 +36,9 @@
       padding: 10px 24px;
       font-size: 16px;
       transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     #menuExportacao button:hover {
@@ -197,18 +200,24 @@
     /* Scroll horizontal para Book de Ordens */
     .book-scrollable {
       overflow-x: auto;
+      max-width: 100%;
     }
 
-    /* Estilo para o canvas do gráfico */
-    #graficoCotacao {
-      max-width: 100%;
-      height: auto;
-      box-shadow: 0 4px 15px rgba(248, 166, 25, 0.7);
-      margin-top: 15px;
-      border-radius: 12px;
-      display: block;
-      background-color: #121212;
+    /* Deixa as duas tabelas principais lado a lado no desktop */
+    .container > .section:nth-child(3),
+    .container > .section:nth-child(4) {
+      max-width: 480px;
+      flex: 1 1 45%;
     }
+
+    @media (max-width: 900px) {
+      .container > .section:nth-child(3),
+      .container > .section:nth-child(4) {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -217,12 +226,21 @@
   <div id="menuExportacao">
     <button onclick="exportarRelatorioExcel()">Exportar Excel</button>
     <button onclick="exportarOrdensJSON()">Exportar JSON</button>
+    <button id="btnGrafico" title="Análise Técnica" onclick="window.location.href='grafico.html'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" viewBox="0 0 24 24">
+        <path d="M3 17h2v-7H3v7zm4 0h2v-4H7v4zm4 0h2v-10h-2v10zm4 0h2v-6h-2v6zm4 0h2v-2h-2v2z"/>
+      </svg>
+      Gráficos
+    </button>
   </div>
 
   <div class="container">
     <div class="header">
-      <h1 id="headerSaldo">Bem-vindo a ContaInvistaFacil | Saldo: R$ 100.000,00</h1>
-      <button onclick="irParaLogin()">Fechar</button>
+      <h1 id="headerSaldo">Saldo: R$ 100.000,00</h1>
+      <div>
+        <span id="nomeUsuario" style="margin-right: 15px; font-weight: bold; color: #ff6600;"></span>
+        <button onclick="logout()">Logout</button>
+      </div>
     </div>
 
     <div class="section">
@@ -252,11 +270,6 @@
           <tr><td>LREN3</td><td>18,75</td></tr>
         </tbody>
       </table>
-    </div>
-
-    <div class="section">
-      <h2>Gráfico de Cotação</h2>
-      <canvas id="graficoCotacao" width="400" height="200"></canvas>
     </div>
 
     <div class="section">
@@ -331,6 +344,22 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <script>
+    // Verifica usuário logado
+    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+    if (!usuarioLogado) {
+      // Se não estiver logado, redireciona para login
+      window.location.href = 'login.html';
+    } else {
+      // Mostra nome do usuário no header
+      document.getElementById('nomeUsuario').textContent = `Olá, ${usuarioLogado.nome}`;
+    }
+
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      window.location.href = 'login.html';
+    }
+
     let saldo = 100000;
 
     let carteira = {
@@ -355,7 +384,7 @@
     let ordemPendente = null;
 
     function atualizarSaldo() {
-      document.getElementById("headerSaldo").textContent = `Bem-vindo a Conta InvistaFacil | Saldo: R$ ${saldo.toFixed(2)}`;
+      document.getElementById("headerSaldo").textContent = `Saldo: R$ ${saldo.toFixed(2)}`;
     }
 
     function atualizarCarteira() {
@@ -465,185 +494,80 @@
           mostrarModal("Saldo insuficiente para essa compra.");
           return;
         }
-        if (diff === 0) {
-          status = "Executada";
-          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
-          saldo -= total;
-          extrato.push({ tipo, ativo, quantidade, total });
-        } else if (diff <= 5) {
+        if (diff <= 0.1) {
           status = "Aceita";
+          saldo -= total;
+          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
+          extrato.push({ tipo, ativo, quantidade, total });
         } else {
-          mostrarModal("Ordem de compra rejeitada: diferença maior que R$5.");
-          return;
+          status = "Rejeitada";
         }
       } else if (tipo === "Venda") {
         if (!carteira[ativo] || carteira[ativo] < quantidade) {
-          mostrarModal("Você não possui ações suficientes para vender.");
+          mostrarModal("Quantidade insuficiente para venda.");
           return;
         }
-        if (diff === 0) {
-          status = "Executada";
+        if (diff <= 0.1) {
+          status = "Aceita";
           carteira[ativo] -= quantidade;
           saldo += total;
           extrato.push({ tipo, ativo, quantidade, total });
-        } else if (diff <= 5) {
-          status = "Aceita";
         } else {
-          mostrarModal("Ordem de venda rejeitada: diferença maior que R$5.");
-          return;
+          status = "Rejeitada";
         }
       }
 
       bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, status });
-      atualizarTabelas();
-
-      if (status === "Executada") {
-        mostrarModal("Ordem executada com sucesso!");
-      } else if (status === "Aceita") {
-        mostrarModal("Ordem aceita e pendente.");
-      }
-
       ordemPendente = null;
+      atualizarTabelas();
       fecharModal();
-    }
 
-    function atualizarGrafico() {
-      const ctx = document.getElementById('graficoCotacao').getContext('2d');
-      const labels = Object.keys(cotacoes);
-      const data = Object.values(cotacoes);
-
-      if (window.grafico) {
-        window.grafico.data.labels = labels;
-        window.grafico.data.datasets[0].data = data;
-        window.grafico.update();
+      if (status === "Aceita") {
+        mostrarModal("Ordem aceita e executada com sucesso!");
       } else {
-        window.grafico = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Cotação (R$)',
-              data,
-              backgroundColor: 'rgba(255, 102, 0, 0.7)',
-              borderColor: 'rgba(255, 102, 0, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true
-              }
-            }
-          }
-        });
+        mostrarModal("Ordem rejeitada devido à diferença de preço maior que R$ 0,10.");
       }
     }
 
-    function irParaLogin() {
-      window.location.href = "index.html";
-    }
-
-    // Atualização automática a cada 10s
+    // Atualiza a carteira, saldo e cotações a cada 10 segundos
     setInterval(() => {
       variarCotacoes();
-      atualizarGrafico();
-      verificarOrdensPendentes();
-      atualizarTabelas();
     }, 10000);
 
-    // Verifica ordens pendentes e executa se possível
-    function verificarOrdensPendentes() {
-      bookOrdens.forEach(o => {
-        if (o.status === "Aceita") {
-          const diff = Math.abs(o.valor - cotacoes[o.ativo]);
-          if (diff === 0) {
-            o.status = "Executada";
-            if (o.tipo === "Compra") {
-              carteira[o.ativo] = (carteira[o.ativo] || 0) + o.quantidade;
-              saldo -= o.valor * o.quantidade;
-            } else if (o.tipo === "Venda") {
-              carteira[o.ativo] -= o.quantidade;
-              saldo += o.valor * o.quantidade;
-            }
-            extrato.push({
-              tipo: o.tipo,
-              ativo: o.ativo,
-              quantidade: o.quantidade,
-              total: o.valor * o.quantidade
-            });
-            mostrarModal(`Ordem pendente de ${o.tipo.toLowerCase()} para ${o.ativo} executada!`);
-          }
-        }
-      });
-      atualizarTabelas();
-    }
-
-    // Função para exportar Excel usando SheetJS
-    function exportarRelatorioExcel() {
-      if (typeof XLSX === "undefined") {
-        alert("Biblioteca XLSX não carregada!");
-        return;
-      }
-
-      const wb = XLSX.utils.book_new();
-
-      // Extrato
-      const dadosExtrato = extrato.map(e => ({
-        Tipo: e.tipo,
-        Ativo: e.ativo,
-        Quantidade: e.quantidade,
-        "Valor Total": e.total.toFixed(2)
-      }));
-      const wsExtrato = XLSX.utils.json_to_sheet(dadosExtrato);
-      XLSX.utils.book_append_sheet(wb, wsExtrato, "Extrato");
-
-      // Ordens
-      const dadosOrdens = bookOrdens.map(o => ({
-        Tipo: o.tipo,
-        Ativo: o.ativo,
-        Quantidade: o.quantidade,
-        Valor: o.valor.toFixed(2),
-        Cotação: o.cotacao.toFixed(2),
-        Status: o.status
-      }));
-      const wsOrdens = XLSX.utils.json_to_sheet(dadosOrdens);
-      XLSX.utils.book_append_sheet(wb, wsOrdens, "Ordens");
-
-      XLSX.writeFile(wb, "relatorio_operacoes.xlsx");
-    }
-// Função para ir para a tela login
-    function irParaLogin() {
-      window.location.href = "login.html";
-   }
-    // Função para exportar ordens para JSON
-    function exportarOrdensJSON() {
-      if (bookOrdens.length === 0) {
-        alert("Não há ordens para exportar.");
-        return;
-      }
-
-      const jsonStr = JSON.stringify(bookOrdens, null, 2);
-
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ordens.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // Inicializações
+    // Atualiza a tabela na primeira carga
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
-    atualizarGrafico();
 
+    // Função para exportar ordens para JSON
+    function exportarOrdensJSON() {
+      if (bookOrdens.length === 0) {
+        mostrarModal("Nenhuma ordem para exportar.");
+        return;
+      }
+      const json = JSON.stringify(bookOrdens, null, 2);
+      const blob = new Blob([json], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "ordens.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Função para exportar extrato para Excel
+    function exportarRelatorioExcel() {
+      if (extrato.length === 0) {
+        mostrarModal("Nenhum extrato para exportar.");
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(extrato);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Extrato");
+      XLSX.writeFile(wb, "extrato.xlsx");
+    }
   </script>
+
 </body>
 </html>

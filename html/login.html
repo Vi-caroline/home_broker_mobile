@@ -29,10 +29,10 @@
         return;
       }
 
-      // Pega a lista de usuários cadastrados
+      // Pega a lista de usuários cadastrados do localStorage
       const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
 
-      // Procura o usuário com e-mail e senha correspondentes
+      // Procura o usuário com email e senha correspondentes
       const usuarioEncontrado = usuarios.find(usuario => usuario.email === email && usuario.senha === senha);
 
       if (!usuarioEncontrado) {
@@ -40,11 +40,13 @@
         return;
       }
 
-      // Armazena o usuário logado (opcional)
+      // Salva o usuário logado no localStorage
       localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
 
       alert(`Bem-vindo, ${usuarioEncontrado.nome}!`);
-      window.location.href = 'carteira.html'; // ou a página que você quiser redirecionar
+
+      // Redireciona para a página carteira.html
+      window.location.href = 'carteira.html';
     });
   </script>
 </body>

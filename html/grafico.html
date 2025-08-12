@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Análise Técnica - InvistaFacil</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      color: #ff6600;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 10px #ff6600;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: none;
+      background-color: #222;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 30px;
+      width: 100%;
+      padding: 12px;
+      background-color: #ff6600;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+      color: black;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #e65c00;
+    }
+    #chartContainer {
+      margin-top: 30px;
+    }
+    canvas {
+      background-color: #000;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Análise Técnica</h1>
+  <div class="container">
+    <label for="ativo">Ativo:</label>
+    <select id="ativo" name="ativo">
+      <option value="PETR4">PETR4</option>
+      <option value="VALE3">VALE3</option>
+      <option value="ITUB4">ITUB4</option>
+      <option value="BBDC4">BBDC4</option>
+      <option value="ABEV3">ABEV3</option>
+      <option value="MGLU3">MGLU3</option>
+      <option value="BBAS3">BBAS3</option>
+      <option value="LREN3">LREN3</option>
+    </select>
+
+    <label for="tempo">Tempo Gráfico:</label>
+    <select id="tempo" name="tempo">
+      <option value="5min">5 minutos</option>
+      <option value="15min">15 minutos</option>
+      <option value="30min">30 minutos</option>
+      <option value="60min">60 minutos</option>
+      <option value="diario">Diário</option>
+    </select>
+
+    <button onclick="gerarGrafico()">Visualizar Gráfico</button>
+    <button onclick="voltarParaCarteira()">Fechar</button>
+
+    <div id="chartContainer">
+      <canvas id="grafico"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let chart = null;
+
+    // Função para simular dados de preço para o gráfico
+    function gerarDadosSimulados(pontos) {
+      const dados = [];
+      let preco = 50; // preço inicial fictício
+      for(let i = 0; i < pontos; i++) {
+        // Variação aleatória entre -1 e +1
+        preco += (Math.random() - 0.5) * 2;
+        preco = Math.max(1, preco); // preço nunca negativo
+        dados.push(preco.toFixed(2));
+      }
+      return dados;
+    }
+
+    // Função para gerar labels simulados (exemplo de tempo)
+    function gerarLabels(pontos, tempo) {
+      const labels = [];
+      const agora = new Date();
+      for(let i = pontos - 1; i >= 0; i--) {
+        let label = '';
+        if (tempo === 'diario') {
+          const dia = new Date(agora);
+          dia.setDate(agora.getDate() - i);
+          label = dia.toLocaleDateString();
+        } else {
+          // Para tempos em minutos, mostrar hh:mm
+          const minutos = parseInt(tempo);
+          const data = new Date(agora.getTime() - i * minutos * 60000);
+          label = data.getHours().toString().padStart(2,'0') + ':' + data.getMinutes().toString().padStart(2,'0');
+        }
+        labels.push(label);
+      }
+      return labels;
+    }
+
+    function gerarGrafico() {
+      const ativo = document.getElementById('ativo').value;
+      const tempo = document.getElementById('tempo').value;
+
+      // Definindo quantidade de pontos no gráfico conforme tempo
+      let pontos;
+      switch(tempo) {
+        case '5min': pontos = 20; break;
+        case '15min': pontos = 30; break;
+        case '30min': pontos = 40; break;
+        case '60min': pontos = 50; break;
+        case 'diario': pontos = 30; break;
+        default: pontos = 20;
+      }
+
+      const labels = gerarLabels(pontos, tempo);
+      const dados = gerarDadosSimulados(pontos);
+
+      // Se já existe gráfico, destruir antes de criar novo
+      if(chart) chart.destroy();
+
+      const ctx = document.getElementById('grafico').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `Preço ${ativo}`,
+            data: dados,
+            borderColor: '#ff6600',
+            backgroundColor: 'rgba(255,102,0,0.3)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              ticks: {
+                color: 'white',
+                maxTicksLimit: 10,
+              },
+              grid: {
+                color: '#444'
+              }
+            },
+            y: {
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: '#444'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+            }
+          }
+        }
+      });
+    }
+
+    function voltarParaCarteira() {
+      window.location.href = "carteira.html"; // Ajuste se o nome do arquivo for diferente
+    }
+  </script>
+</body>
+</html>
