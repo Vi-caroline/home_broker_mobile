@@ -2,31 +2,49 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
   <div class="container">
     <h2>Login</h2>
-
-    <form id="login-form">
+    <form id="form-login">
       <input type="email" id="email" placeholder="E-mail" required />
       <input type="password" id="senha" placeholder="Senha" required />
       <button type="submit">Entrar</button>
     </form>
-
-    <p style="text-align: center;">Não tem conta? 
-      <a href="cadastro.html" style="color: orange;">Cadastre-se</a>
-    </p>
+    <p>Não tem conta? <a href="cadastro.html" style="color: orange;">Cadastre-se</a></p>
   </div>
 
-  <div class="modal" id="meuModal">
-    <div class="modal-content">
-      <p id="modalTexto"></p>
-         </div>
-  </div>
+  <script>
+    document.getElementById('form-login').addEventListener('submit', function(e) {
+      e.preventDefault();
 
-  <script src="../js/login.js"></script>
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const senha = document.getElementById('senha').value;
+
+      if (!email || !senha) {
+        alert('Por favor, preencha todos os campos!');
+        return;
+      }
+
+      // Pega a lista de usuários cadastrados
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+
+      // Procura o usuário com e-mail e senha correspondentes
+      const usuarioEncontrado = usuarios.find(usuario => usuario.email === email && usuario.senha === senha);
+
+      if (!usuarioEncontrado) {
+        alert('E-mail ou senha incorretos!');
+        return;
+      }
+
+      // Armazena o usuário logado (opcional)
+      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
+
+      alert(`Bem-vindo, ${usuarioEncontrado.nome}!`);
+      window.location.href = 'carteira.html'; // ou a página que você quiser redirecionar
+    });
+  </script>
 </body>
 </html>
