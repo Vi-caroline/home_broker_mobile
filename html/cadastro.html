@@ -1,4 +1,4 @@
-<!DOCTYPE html>   
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
   <div class="container">
     <h2>Cadastro</h2>
     <form id="form-cadastro">
-      <input type="text" id="nome" placeholder="Nome" required />
+      <input type="text" id="nome" placeholder="Nome Completo" required />
       <input type="email" id="email" placeholder="E-mail" required />
       <input type="password" id="senha" placeholder="Senha" required />
       <button type="submit">Cadastrar</button>
@@ -17,16 +17,57 @@
     <p>Já tem conta? <a href="login.html" style="color: orange;">Faça o login</a></p>
   </div>
 
-<div class="modal" id="modalCadastro">
-    <div class="modal-content">
-      
-  </div>
+  <script>
+    document.getElementById('form-cadastro').addEventListener('submit', function(e) {
+      e.preventDefault();
 
-  
+      const nome = document.getElementById('nome').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const senha = document.getElementById('senha').value;
 
-  <script src="../js/cadastro.js"></script>
+      if (!nome || !email || !senha) {
+        alert('Por favor, preencha todos os campos!');
+        return;
+      }
+
+      // Validação da senha
+      if (senha.length > 9) {
+        alert('A senha deve ter no máximo 9 caracteres.');
+        return;
+      }
+      if (!/[A-Z]/.test(senha)) {
+        alert('A senha deve conter pelo menos uma letra maiúscula.');
+        return;
+      }
+      if (!/[a-z]/.test(senha)) {
+        alert('A senha deve conter pelo menos uma letra minúscula.');
+        return;
+      }
+      if (!/[0-9]/.test(senha)) {
+        alert('A senha deve conter pelo menos um número.');
+        return;
+      }
+
+      // Pega a lista de usuários já cadastrados ou cria uma nova
+      let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+
+      // Verifica se o e-mail já existe
+      const emailExiste = usuarios.some(usuario => usuario.email === email);
+      if (emailExiste) {
+        alert('Este e-mail já está cadastrado!');
+        return;
+      }
+
+      // Adiciona o novo usuário
+      usuarios.push({ nome, email, senha });
+
+      // Salva no localStorage
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+      alert('Cadastro realizado com sucesso! Agora faça o login.');
+      window.location.href = 'login.html';
+    });
+  </script>
 </body>
 </html>
-
-
 
