@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,7 +11,7 @@
     <h2>Cadastro</h2>
     <form id="form-cadastro">
       <input type="text" id="nome" placeholder="Nome Completo" required />
-      <input type="text" id="cpf" placeholder="CPF (somente números)" required maxlength="11" />
+      <input type="text" id="cpf" placeholder="CPF (somente números)" required maxlength="11" inputmode="numeric" pattern="\d*" />
       <input type="text" id="whatsapp" placeholder="WhatsApp (DDD + número)" required maxlength="11" />
       <input type="email" id="email" placeholder="E-mail" required />
       <input type="password" id="senha" placeholder="Senha" required />
@@ -21,6 +23,15 @@
   </div>
 
   <script>
+    // Bloqueia letras no campo CPF
+    const inputCpf = document.getElementById('cpf');
+    inputCpf.addEventListener('keypress', function(e) {
+      const charCode = e.charCode || e.keyCode;
+      if (charCode < 48 || charCode > 57) {
+        e.preventDefault();
+      }
+    });
+
     document.getElementById('form-cadastro').addEventListener('submit', function(e) {
       e.preventDefault();
 

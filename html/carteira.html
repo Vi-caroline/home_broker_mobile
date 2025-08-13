@@ -490,83 +490,84 @@
       let status = "";
 
       if (tipo === "Compra") {
-        if (saldo < total) {
-          mostrarModal("Saldo insuficiente para essa compra.");
+        // Validação saldo suficiente antes de executar
+        if (total > saldo) {
+          fecharModal();
+          mostrarModal("Saldo insuficiente para esta operação.");
+          ordemPendente = null;
           return;
         }
-        if (diff <= 0.1) {
-          status = "Aceita";
-          saldo -= total;
-          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
-          extrato.push({ tipo, ativo, quantidade, total });
+
+        // Verifica preço muito diferente da cotação
+        if (diff > cotacao * 0.10) {
+          status = "Pendente";
         } else {
-          status = "Rejeitada";
+          status = "Aceita";
+          // Atualiza carteira e saldo
+          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
+          saldo -= total;
+          saldo = parseFloat(saldo.toFixed(2));
+          extrato.push({ tipo, ativo, quantidade, total });
         }
       } else if (tipo === "Venda") {
+        // Valida se tem ações suficientes para vender
         if (!carteira[ativo] || carteira[ativo] < quantidade) {
-          mostrarModal("Quantidade insuficiente para venda.");
+          fecharModal();
+          mostrarModal("Quantidade insuficiente de ações para venda.");
+          ordemPendente = null;
           return;
         }
-        if (diff <= 0.1) {
+
+        if (diff > cotacao * 0.10) {
+          status = "Pendente";
+        } else {
           status = "Aceita";
           carteira[ativo] -= quantidade;
           saldo += total;
+          saldo = parseFloat(saldo.toFixed(2));
           extrato.push({ tipo, ativo, quantidade, total });
-        } else {
-          status = "Rejeitada";
         }
       }
 
-      bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, status });
-      ordemPendente = null;
-      atualizarTabelas();
-      fecharModal();
+      bookOrdens.push({
+        tipo,
+        ativo,
+        quantidade,
+        valor,
+        cotacao,
+        status
+      });
 
-      if (status === "Aceita") {
-        mostrarModal("Ordem aceita e executada com sucesso!");
-      } else {
-        mostrarModal("Ordem rejeitada devido à diferença de preço maior que R$ 0,10.");
-      }
+      ordemPendente = null;
+      fecharModal();
+      atualizarTabelas();
     }
 
-    // Atualiza a carteira, saldo e cotações a cada 10 segundos
-    setInterval(() => {
-      variarCotacoes();
-    }, 10000);
+    function exportarRelatorioExcel() {
+      alert("Função de exportar Excel ainda não implementada.");
+    }
 
-    // Atualiza a tabela na primeira carga
-    atualizarSaldo();
-    atualizarCarteira();
-    atualizarCotacoes();
-    atualizarTabelas();
-
-    // Função para exportar ordens para JSON
     function exportarOrdensJSON() {
-      if (bookOrdens.length === 0) {
-        mostrarModal("Nenhuma ordem para exportar.");
-        return;
-      }
       const json = JSON.stringify(bookOrdens, null, 2);
-      const blob = new Blob([json], {type: "application/json"});
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = "ordens.json";
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // Função para exportar extrato para Excel
-    function exportarRelatorioExcel() {
-      if (extrato.length === 0) {
-        mostrarModal("Nenhum extrato para exportar.");
-        return;
-      }
-      const ws = XLSX.utils.json_to_sheet(extrato);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Extrato");
-      XLSX.writeFile(wb, "extrato.xlsx");
-    }
+    // Atualiza cotações a cada 10 segundos
+    setInterval(() => {
+      variarCotacoes();
+      // Você pode implementar aqui reavaliação das ordens pendentes se desejar
+    }, 10000);
+
+    atualizarSaldo();
+    atualizarCarteira();
+    atualizarCotacoes();
+    atualizarTabelas();
   </script>
 
 </body>
