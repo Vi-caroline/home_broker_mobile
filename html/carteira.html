@@ -543,8 +543,45 @@
       atualizarTabelas();
     }
 
-    function exportarRelatorioExcel() {
-      alert("Função de exportar Excel ainda não implementada.");
+   function exportarRelatorioExcel() {
+  // Função auxiliar para pegar dados de uma tabela HTML
+  function tabelaParaArray(idTabela, cabecalhos) {
+    const tabela = document.getElementById(idTabela);
+    const dados = [cabecalhos];
+
+    if (tabela && tabela.rows.length > 0) {
+      for (let i = 0; i < tabela.rows.length; i++) {
+        const linha = [];
+        for (let j = 0; j < tabela.rows[i].cells.length; j++) {
+          linha.push(tabela.rows[i].cells[j].innerText);
+        }
+        dados.push(linha);
+      }
+    }
+    return dados;
+  }
+
+  // 1️⃣ Carteira
+  const carteiraDados = tabelaParaArray("carteiraBody", ["Ativo", "Quantidade"]);
+
+  // 2️⃣ Extrato
+  const extratoDados = tabelaParaArray("extratoBody", ["Tipo", "Ativo", "Quantidade", "Valor Total (R$)"]);
+
+  // 3️⃣ Book de Ordens
+  const bookOrdensDados = tabelaParaArray("bookOrdensBody", ["Tipo", "Ativo", "Quantidade", "Valor", "Cotação", "Status", "Ação"]);
+
+  // Criar o arquivo Excel
+  const wb = XLSX.utils.book_new();
+
+  // Adiciona cada aba
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(carteiraDados), "Carteira");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(extratoDados), "Extrato");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bookOrdensDados), "Book de Ordens");
+
+  // Salvar arquivo
+  XLSX.writeFile(wb, "relatorio_invista_facil.xlsx");
+
+
     }
 
     function exportarOrdensJSON() {
