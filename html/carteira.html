@@ -49,12 +49,11 @@
       max-width: 1200px;
       margin: 30px auto;
       padding: 20px;
-      background: #121212;
-      border-radius: 16px;
       display: flex;
       gap: 20px;
       flex-wrap: wrap;
       justify-content: center;
+      align-items: stretch; /* faz sections terem altura igual */
     }
 
     .header {
@@ -94,8 +93,10 @@
       border-radius: 12px;
       flex: 1 1 300px;
       min-width: 280px;
-      max-width: 400px;
+      max-width: 480px;
       box-shadow: 0 0 10px #ff6600;
+      display: flex;
+      flex-direction: column;
     }
 
     .section h2 {
@@ -107,10 +108,10 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
       color: white;
       table-layout: fixed;
       word-wrap: break-word;
+      flex-grow: 1; /* preenche altura da section */
     }
 
     th, td {
@@ -146,6 +147,12 @@
       color: #fff;
       font-size: 16px;
       box-sizing: border-box;
+    }
+
+    .boleta-form {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1; /* faz ocupar altura da section */
     }
 
     /* Modal */
@@ -203,16 +210,8 @@
       max-width: 100%;
     }
 
-    /* Deixa as duas tabelas principais lado a lado no desktop */
-    .container > .section:nth-child(3),
-    .container > .section:nth-child(4) {
-      max-width: 480px;
-      flex: 1 1 45%;
-    }
-
     @media (max-width: 900px) {
-      .container > .section:nth-child(3),
-      .container > .section:nth-child(4) {
+      .container > .section {
         flex: 1 1 100%;
         max-width: 100%;
       }
@@ -344,14 +343,11 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <script>
-    // Verifica usuário logado
     const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
 
     if (!usuarioLogado) {
-      // Se não estiver logado, redireciona para login
       window.location.href = 'login.html';
     } else {
-      // Mostra nome do usuário no header
       document.getElementById('nomeUsuario').textContent = `Olá, ${usuarioLogado.nome}`;
     }
 
@@ -361,24 +357,8 @@
     }
 
     let saldo = 100000;
-
-    let carteira = {
-      PETR4: 300,
-      VALE3: 200,
-      ITUB4: 100
-    };
-
-    let cotacoes = {
-      PETR4: 28.95,
-      VALE3: 72.75,
-      ITUB4: 31.55,
-      BBDC4: 28.25,
-      ABEV3: 14.70,
-      MGLU3: 3.90,
-      BBAS3: 49.55,
-      LREN3: 18.75,
-    };
-
+    let carteira = { PETR4:300, VALE3:200, ITUB4:100 };
+    let cotacoes = { PETR4:28.95, VALE3:72.75, ITUB4:31.55, BBDC4:28.25, ABEV3:14.70, MGLU3:3.90, BBAS3:49.55, LREN3:18.75 };
     const extrato = [];
     const bookOrdens = [];
     let ordemPendente = null;
@@ -386,7 +366,6 @@
     function atualizarSaldo() {
       document.getElementById("headerSaldo").textContent = `Saldo: R$ ${saldo.toFixed(2)}`;
     }
-
     function atualizarCarteira() {
       const carteiraBody = document.getElementById("carteiraBody");
       carteiraBody.innerHTML = "";
@@ -394,7 +373,6 @@
         carteiraBody.innerHTML += `<tr><td>${ativo}</td><td>${carteira[ativo]}</td></tr>`;
       }
     }
-
     function atualizarCotacoes() {
       const bookCotacoesBody = document.getElementById("bookCotacoesBody");
       bookCotacoesBody.innerHTML = "";
@@ -402,7 +380,6 @@
         bookCotacoesBody.innerHTML += `<tr><td>${ativo}</td><td>R$ ${cotacoes[ativo].toFixed(2)}</td></tr>`;
       }
     }
-
     function variarCotacoes() {
       for (const ativo in cotacoes) {
         const variacao = Math.random() < 0.5 ? -0.01 : 0.01;
@@ -411,17 +388,14 @@
       }
       atualizarCotacoes();
     }
-
     function mostrarModal(mensagem) {
       document.getElementById("modalTexto").textContent = mensagem;
       document.getElementById("meuModal").style.display = "flex";
     }
-
     function fecharModal() {
       document.getElementById("meuModal").style.display = "none";
       document.getElementById("modalConfirmacao").style.display = "none";
     }
-
     function atualizarTabelas() {
       const extratoBody = document.getElementById("extratoBody");
       const bookOrdensBody = document.getElementById("bookOrdensBody");
@@ -434,18 +408,12 @@
 
       bookOrdens.forEach((o, i) => {
         const botaoCancelar = o.status === "Aceita" ? `<button onclick="cancelarOrdem(${i})">Cancelar</button>` : "";
-        bookOrdensBody.innerHTML += `
-          <tr>
-            <td>${o.tipo}</td><td>${o.ativo}</td><td>${o.quantidade}</td>
-            <td>R$ ${o.valor.toFixed(2)}</td><td>R$ ${o.cotacao.toFixed(2)}</td><td>${o.status}</td>
-            <td>${botaoCancelar}</td>
-          </tr>`;
+        bookOrdensBody.innerHTML += `<tr><td>${o.tipo}</td><td>${o.ativo}</td><td>${o.quantidade}</td><td>R$ ${o.valor.toFixed(2)}</td><td>R$ ${o.cotacao.toFixed(2)}</td><td>${o.status}</td><td>${botaoCancelar}</td></tr>`;
       });
 
       atualizarSaldo();
       atualizarCarteira();
     }
-
     function cancelarOrdem(index) {
       if (bookOrdens[index].status === "Aceita") {
         bookOrdens.splice(index, 1);
@@ -453,34 +421,40 @@
         mostrarModal("Ordem cancelada!");
       }
     }
-
     function enviarOrdem() {
-      const tipo = document.getElementById("tipoOrdem").value;
-      const ativo = document.getElementById("ativo").value;
-      const quantidade = parseInt(document.getElementById("quantidade").value);
-      const valor = parseFloat(document.getElementById("valor").value);
+  const tipo = document.getElementById("tipoOrdem").value;
+  const ativo = document.getElementById("ativo").value;
+  const quantidade = parseInt(document.getElementById("quantidade").value);
+  const valor = parseFloat(document.getElementById("valor").value);
 
-      if (!ativo || isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0 || isNaN(valor) || valor <= 0) {
-        mostrarModal("Preencha quantidade válida (múltiplos de 100) e valor.");
-        return;
-      }
+  // Validação do ativo
+  if (!ativo) {
+    mostrarModal("Por favor, selecione um ativo.");
+    return;
+  }
 
-      const cotacaoAtual = cotacoes[ativo];
-      const total = valor * quantidade;
+  // Validação da quantidade
+  if (isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0) {
+    mostrarModal("Por favor, informe uma quantidade válida (múltiplos de 100).");
+    return;
+  }
 
-      ordemPendente = {
-        tipo,
-        ativo,
-        quantidade,
-        valor,
-        cotacao: cotacaoAtual,
-        total
-      };
+  // Validação do valor
+  if (isNaN(valor) || valor <= 0) {
+    mostrarModal("Por favor, informe um valor válido.");
+    return;
+  }
 
-      const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
-      document.getElementById("mensagemConfirmacao").textContent = mensagem;
-      document.getElementById("modalConfirmacao").style.display = "flex";
-    }
+  // Se passou todas as validações, cria a ordem pendente
+  const cotacaoAtual = cotacoes[ativo];
+  const total = valor * quantidade;
+  ordemPendente = { tipo, ativo, quantidade, valor, cotacao: cotacaoAtual, total };
+
+  const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
+  document.getElementById("mensagemConfirmacao").textContent = mensagem;
+  document.getElementById("modalConfirmacao").style.display = "flex";
+}
+
 
     function confirmarOrdem() {
       if (!ordemPendente) return;
@@ -490,38 +464,28 @@
       let status = "";
 
       if (tipo === "Compra") {
-        // Validação saldo suficiente antes de executar
         if (total > saldo) {
           fecharModal();
           mostrarModal("Saldo insuficiente para esta operação.");
           ordemPendente = null;
           return;
         }
-
-        // Verifica preço muito diferente da cotação
-        if (diff > cotacao * 0.10) {
-          status = "Pendente";
-        } else {
-          status = "Aceita";
-          // Atualiza carteira e saldo
+        status = diff > cotacao * 0.10 ? "Pendente" : "Aceita";
+        if (status === "Aceita") {
           carteira[ativo] = (carteira[ativo] || 0) + quantidade;
           saldo -= total;
           saldo = parseFloat(saldo.toFixed(2));
-          extrato.push({ tipo, ativo, quantidade, total });
+                    extrato.push({ tipo, ativo, quantidade, total });
         }
       } else if (tipo === "Venda") {
-        // Valida se tem ações suficientes para vender
         if (!carteira[ativo] || carteira[ativo] < quantidade) {
           fecharModal();
-          mostrarModal("Quantidade insuficiente de ações para venda.");
+          mostrarModal("Você não possui ações suficientes para vender.");
           ordemPendente = null;
           return;
         }
-
-        if (diff > cotacao * 0.10) {
-          status = "Pendente";
-        } else {
-          status = "Aceita";
+        status = diff > cotacao * 0.10 ? "Pendente" : "Aceita";
+        if (status === "Aceita") {
           carteira[ativo] -= quantidade;
           saldo += total;
           saldo = parseFloat(saldo.toFixed(2));
@@ -529,83 +493,47 @@
         }
       }
 
-      bookOrdens.push({
-        tipo,
-        ativo,
-        quantidade,
-        valor,
-        cotacao,
-        status
-      });
-
+      bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, total, status });
       ordemPendente = null;
-      fecharModal();
       atualizarTabelas();
-    }
-
-   function exportarRelatorioExcel() {
-  // Função auxiliar para pegar dados de uma tabela HTML
-  function tabelaParaArray(idTabela, cabecalhos) {
-    const tabela = document.getElementById(idTabela);
-    const dados = [cabecalhos];
-
-    if (tabela && tabela.rows.length > 0) {
-      for (let i = 0; i < tabela.rows.length; i++) {
-        const linha = [];
-        for (let j = 0; j < tabela.rows[i].cells.length; j++) {
-          linha.push(tabela.rows[i].cells[j].innerText);
-        }
-        dados.push(linha);
+      fecharModal();
+      if (status === "Aceita") {
+        mostrarModal("Ordem executada com sucesso!");
+      } else {
+        mostrarModal("Ordem adicionada ao book como Pendente.");
       }
     }
-    return dados;
-  }
 
-  // 1️⃣ Carteira
-  const carteiraDados = tabelaParaArray("carteiraBody", ["Ativo", "Quantidade"]);
-
-  // 2️⃣ Extrato
-  const extratoDados = tabelaParaArray("extratoBody", ["Tipo", "Ativo", "Quantidade", "Valor Total (R$)"]);
-
-  // 3️⃣ Book de Ordens
-  const bookOrdensDados = tabelaParaArray("bookOrdensBody", ["Tipo", "Ativo", "Quantidade", "Valor", "Cotação", "Status", "Ação"]);
-
-  // Criar o arquivo Excel
-  const wb = XLSX.utils.book_new();
-
-  // Adiciona cada aba
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(carteiraDados), "Carteira");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(extratoDados), "Extrato");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bookOrdensDados), "Book de Ordens");
-
-  // Salvar arquivo
-  XLSX.writeFile(wb, "relatorio_invista_facil.xlsx");
-
-
+    function exportarRelatorioExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws1 = XLSX.utils.json_to_sheet(extrato);
+      XLSX.utils.book_append_sheet(wb, ws1, "Extrato");
+      XLSX.writeFile(wb, "Relatorio_Carteira.xlsx");
     }
 
     function exportarOrdensJSON() {
-      const json = JSON.stringify(bookOrdens, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
+      const dataStr = JSON.stringify(bookOrdens, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "ordens.json";
+      a.download = "Book_Ordens.json";
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // Atualiza cotações a cada 10 segundos
+    // Atualização automática a cada 10s
     setInterval(() => {
       variarCotacoes();
-      // Você pode implementar aqui reavaliação das ordens pendentes se desejar
+      atualizarTabelas();
     }, 10000);
 
+    // Inicializa a página
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
     atualizarTabelas();
   </script>
-
 </body>
 </html>
+
