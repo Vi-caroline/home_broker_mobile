@@ -45,6 +45,15 @@
       background-color: #e65c00;
     }
 
+    .mensagem-erro {
+      color: #ff3300;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 6px;
+      display: none;
+    }
+
     .container {
       max-width: 1200px;
       margin: 30px auto;
@@ -197,7 +206,7 @@
       user-select: none;
     }
 
-    .mensagem-erro {
+    .mensagem-erro-modal {
       color: #ff3300;
       margin-top: 12px;
       font-weight: bold;
@@ -232,6 +241,9 @@
       Gráficos
     </button>
   </div>
+
+  <!-- Mensagem de erro de exportação -->
+  <div id="mensagemErroExport" class="mensagem-erro"></div>
 
   <div class="container">
     <div class="header">
@@ -422,113 +434,111 @@
       }
     }
     function enviarOrdem() {
-  const tipo = document.getElementById("tipoOrdem").value;
-  const ativo = document.getElementById("ativo").value;
-  const quantidade = parseInt(document.getElementById("quantidade").value);
-  const valor = parseFloat(document.getElementById("valor").value);
+      const tipo = document.getElementById("tipoOrdem").value;
+      const ativo = document.getElementById("ativo").value;
+      const quantidade = parseInt(document.getElementById("quantidade").value);
+      const valor = parseFloat(document.getElementById("valor").value);
 
-  // Validação do ativo
-  if (!ativo) {
-    mostrarModal("Por favor, selecione um ativo.");
-    return;
-  }
+      if (!ativo) { mostrarModal("Por favor, selecione um ativo."); return; }
+      if (isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0) { mostrarModal("Por favor, informe uma quantidade válida (múltiplos de 100)."); return; }
+      if (isNaN(valor) || valor <= 0) { mostrarModal("Por favor, informe um valor válido."); return; }
 
-  // Validação da quantidade
-  if (isNaN(quantidade) || quantidade <= 0 || quantidade % 100 !== 0) {
-    mostrarModal("Por favor, informe uma quantidade válida (múltiplos de 100).");
-    return;
-  }
+      const cotacaoAtual = cotacoes[ativo];
+      const total = valor * quantidade;
+      ordemPendente = { tipo, ativo, quantidade, valor, cotacao: cotacaoAtual, total };
 
-  // Validação do valor
-  if (isNaN(valor) || valor <= 0) {
-    mostrarModal("Por favor, informe um valor válido.");
-    return;
-  }
-
-  // Se passou todas as validações, cria a ordem pendente
-  const cotacaoAtual = cotacoes[ativo];
-  const total = valor * quantidade;
-  ordemPendente = { tipo, ativo, quantidade, valor, cotacao: cotacaoAtual, total };
-
-  const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
-  document.getElementById("mensagemConfirmacao").textContent = mensagem;
-  document.getElementById("modalConfirmacao").style.display = "flex";
-}
-
+      const mensagem = `Você está prestes a ${tipo.toLowerCase()} ${quantidade} ações de ${ativo} a R$ ${valor.toFixed(2)}. Deseja confirmar a operação?`;
+      document.getElementById("mensagemConfirmacao").textContent = mensagem;
+      document.getElementById("modalConfirmacao").style.display = "flex";
+    }
 
     function confirmarOrdem() {
       if (!ordemPendente) return;
-
       const { tipo, ativo, quantidade, valor, cotacao, total } = ordemPendente;
       const diff = Math.abs(valor - cotacao);
       let status = "";
 
       if (tipo === "Compra") {
-        if (total > saldo) {
-          fecharModal();
-          mostrarModal("Saldo insuficiente para esta operação.");
-          ordemPendente = null;
-          return;
-        }
-        status = diff > cotacao * 0.10 ? "Pendente" : "Aceita";
-        if (status === "Aceita") {
-          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
+                if (total > saldo) {
+          status = "Rejeitada";
+          mostrarModal("Saldo insuficiente para executar a compra!");
+        } else {
+          status = "Aceita";
           saldo -= total;
-          saldo = parseFloat(saldo.toFixed(2));
-                    extrato.push({ tipo, ativo, quantidade, total });
+          carteira[ativo] = (carteira[ativo] || 0) + quantidade;
+          extrato.push({ tipo, ativo, quantidade, total });
         }
       } else if (tipo === "Venda") {
-        if (!carteira[ativo] || carteira[ativo] < quantidade) {
-          fecharModal();
-          mostrarModal("Você não possui ações suficientes para vender.");
-          ordemPendente = null;
-          return;
-        }
-        status = diff > cotacao * 0.10 ? "Pendente" : "Aceita";
-        if (status === "Aceita") {
-          carteira[ativo] -= quantidade;
+        if (!carteira[ativo] || quantidade > carteira[ativo]) {
+          status = "Rejeitada";
+          mostrarModal("Quantidade indisponível na carteira para venda!");
+        } else {
+          status = "Aceita";
           saldo += total;
-          saldo = parseFloat(saldo.toFixed(2));
+          carteira[ativo] -= quantidade;
           extrato.push({ tipo, ativo, quantidade, total });
         }
       }
 
       bookOrdens.push({ tipo, ativo, quantidade, valor, cotacao, total, status });
       ordemPendente = null;
-      atualizarTabelas();
       fecharModal();
-      if (status === "Aceita") {
-        mostrarModal("Ordem executada com sucesso!");
-      } else {
-        mostrarModal("Ordem adicionada ao book como Pendente.");
-      }
+      atualizarTabelas();
     }
 
     function exportarRelatorioExcel() {
+      const tabela = document.getElementById("extratoBody");
+      if (tabela.rows.length === 0) {
+        mostrarMensagemErro("Não há dados para exportar.");
+        return;
+      }
+
       const wb = XLSX.utils.book_new();
-      const ws1 = XLSX.utils.json_to_sheet(extrato);
-      XLSX.utils.book_append_sheet(wb, ws1, "Extrato");
-      XLSX.writeFile(wb, "Relatorio_Carteira.xlsx");
+      const ws_data = [["Tipo", "Ativo", "Quantidade", "Valor Total (R$)"]];
+      for (let row of tabela.rows) {
+        ws_data.push([row.cells[0].innerText, row.cells[1].innerText, row.cells[2].innerText, row.cells[3].innerText]);
+      }
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      XLSX.utils.book_append_sheet(wb, ws, "Extrato");
+      XLSX.writeFile(wb, "extrato.xlsx");
+      limparMensagemErro();
     }
 
     function exportarOrdensJSON() {
-      const dataStr = JSON.stringify(bookOrdens, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
+      if (bookOrdens.length === 0) {
+        mostrarMensagemErro("Não há ordens para exportar.");
+        return;
+      }
+
+      const json = JSON.stringify(bookOrdens, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "Book_Ordens.json";
+      a.download = "book_ordens.json";
       a.click();
       URL.revokeObjectURL(url);
+      limparMensagemErro();
     }
 
-    // Atualização automática a cada 10s
+    function mostrarMensagemErro(msg) {
+      const div = document.getElementById("mensagemErroExport");
+      div.textContent = msg;
+      div.style.display = "block";
+    }
+
+    function limparMensagemErro() {
+      const div = document.getElementById("mensagemErroExport");
+      div.textContent = "";
+      div.style.display = "none";
+    }
+
+    // Atualizações periódicas
     setInterval(() => {
       variarCotacoes();
-      atualizarTabelas();
     }, 10000);
 
-    // Inicializa a página
+    // Inicializações
     atualizarSaldo();
     atualizarCarteira();
     atualizarCotacoes();
