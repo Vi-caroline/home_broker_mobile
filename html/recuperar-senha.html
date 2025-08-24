@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recuperar Senha</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .container {
+      max-width: 350px;
+      margin: 80px auto;
+      padding: 20px;
+      background: #1c1c1c;
+      color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+    input {
+      background: #333;
+      color: #fff;
+    }
+    input.invalido {
+      border: 2px solid red;
+    }
+    button {
+      background: orange;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    a {
+      color: orange;
+      text-decoration: none;
+    }
+    .regras {
+      font-size: 12px;
+      text-align: left;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      color: #ccc;
+    }
+    .erro-email {
+      color: red;
+      font-size: 12px;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      text-align: left;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Recuperar Senha</h2>
+    <form id="form-recuperar">
+      <input type="email" id="email" placeholder="Digite seu e-mail" required />
+      <div id="erro-email" class="erro-email">E-mail inválido! Verifique se contém "@" e termina com ".com" ou ".com.br".</div>
+      <input type="password" id="nova-senha" placeholder="Nova senha" required />
+      <div class="regras">
+        A senha deve conter:<br>
+        - Mínimo 9 caracteres<br>
+        - Pelo menos 1 letra maiúscula<br>
+        - Pelo menos 1 letra minúscula<br>
+        - Pelo menos 1 número<br>
+        - Pelo menos 1 caractere especial (@, #, $, %, &...)
+      </div>
+      <button type="submit">Redefinir Senha</button>
+    </form>
+    <p><a href="login.html">Voltar ao Login</a></p>
+  </div>
+
+  <script>
+    function validarSenha(senha) {
+      const regras = [
+        /.{9,}/,        
+        /[A-Z]/,        
+        /[a-z]/,        
+        /[0-9]/,        
+        /[@$!%*?&#]/    
+      ];
+      return regras.every(regex => regex.test(senha));
+    }
+
+    function validarEmail(email) {
+      return /.+@.+\.(com|com\.br)$/i.test(email);
+    }
+
+    const form = document.getElementById('form-recuperar');
+    const emailInput = document.getElementById('email');
+    const erroEmail = document.getElementById('erro-email');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const email = emailInput.value.trim().toLowerCase();
+      const novaSenha = document.getElementById('nova-senha').value.trim();
+
+      // Reset visual do input
+      emailInput.classList.remove('invalido');
+      erroEmail.style.display = 'none';
+
+      if (!email || !novaSenha) {
+        alert('Preencha todos os campos!');
+        return;
+      }
+
+      if (!validarEmail(email)) {
+        emailInput.classList.add('invalido');
+        erroEmail.style.display = 'block';
+        return;
+      }
+
+      if (!validarSenha(novaSenha)) {
+        alert('A senha deve ter no mínimo 9 caracteres, incluindo maiúscula, minúscula, número e caractere especial.');
+        return;
+      }
+
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+      const usuarioIndex = usuarios.findIndex(usuario => usuario.email === email);
+
+      if (usuarioIndex === -1) {
+        alert('E-mail não cadastrado!');
+        return;
+      }
+
+      usuarios[usuarioIndex].senha = novaSenha;
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+      alert('Senha redefinida com sucesso! Agora faça login.');
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
