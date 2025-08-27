@@ -11,8 +11,8 @@
     <h2>Cadastro</h2>
     <form id="form-cadastro">
       <input type="text" id="nome" placeholder="Nome Completo" required />
-      <input type="text" id="cpf" placeholder="CPF (somente números)" required maxlength="11" inputmode="numeric" pattern="\d*" />
-      <input type="text" id="whatsapp" placeholder="WhatsApp (DDD + número)" required maxlength="11" />
+      <input type="text" id="cpf" placeholder="CPF (somente números)" required maxlength="11" inputmode="numeric" />
+      <input type="text" id="whatsapp" placeholder="WhatsApp (DDD + número)" required maxlength="11" inputmode="numeric" />
       <input type="email" id="email" placeholder="E-mail" required />
       <input type="password" id="senha" placeholder="Senha" required />
       <input type="password" id="confirmar-senha" placeholder="Confirme sua Senha" required />
@@ -23,13 +23,22 @@
   </div>
 
   <script>
-    // Bloqueia letras no campo CPF
+    // Nome: só letras e espaços
+    const inputNome = document.getElementById('nome');
+    inputNome.addEventListener('input', function () {
+      this.value = this.value.replace(/[^A-Za-zÀ-ú\s]/g, '');
+    });
+
+    // CPF: só números
     const inputCpf = document.getElementById('cpf');
-    inputCpf.addEventListener('keypress', function(e) {
-      const charCode = e.charCode || e.keyCode;
-      if (charCode < 48 || charCode > 57) {
-        e.preventDefault();
-      }
+    inputCpf.addEventListener('input', function () {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // WhatsApp: só números
+    const inputWhatsapp = document.getElementById('whatsapp');
+    inputWhatsapp.addEventListener('input', function () {
+      this.value = this.value.replace(/[^0-9]/g, '');
     });
 
     document.getElementById('form-cadastro').addEventListener('submit', function(e) {
@@ -52,11 +61,6 @@
       }
 
       // Validação do nome
-      const nomeValido = /^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+$/.test(nome);
-      if (!nomeValido) {
-        alert('O nome completo deve conter apenas letras e espaços.');
-        return;
-      }
       if (nome.split(' ').filter(p => p.length > 0).length < 2) {
         alert('Informe o nome completo (nome e sobrenome).');
         return;
@@ -75,28 +79,29 @@
       }
 
       // Validação da senha
-      if (senha.length !== 9) {
-        alert('A senha deve ter exatamente 9 caracteres.');
-        return;
+      let errosSenha = [];
+      if (senha.length < 5 || senha.length > 9) {
+        errosSenha.push('A senha deve ter entre 5 e 9 caracteres.');
       }
       if (!/[A-Z]/.test(senha)) {
-        alert('A senha deve conter pelo menos uma letra maiúscula.');
-        return;
+        errosSenha.push('Senha deve conter pelo menos uma letra maiúscula.');
       }
       if (!/[a-z]/.test(senha)) {
-        alert('A senha deve conter pelo menos uma letra minúscula.');
-        return;
+        errosSenha.push('Senha deve conter pelo menos uma letra minúscula.');
       }
       if (!/[0-9]/.test(senha)) {
-        alert('A senha deve conter pelo menos um número.');
-        return;
+        errosSenha.push('Senha deve conter pelo menos um número.');
       }
       if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
-        alert('A senha deve conter pelo menos um caractere especial.');
+        errosSenha.push('Senha deve conter pelo menos um caractere especial.');
+      }
+
+      if (errosSenha.length > 0) {
+        erroSenha.textContent = errosSenha.join(' ');
         return;
       }
 
-      // Confirmação de senha (mensagem na tela)
+      // Confirmação de senha
       if (senha !== confirmarSenha) {
         erroSenha.textContent = 'As senhas não coincidem!';
         return;
